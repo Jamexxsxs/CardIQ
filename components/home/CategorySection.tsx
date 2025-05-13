@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Pressable, Image } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { X } from "lucide-react-native";
+import FolderIcon from '../../assets/folder-icon.png';
 
 export interface Category {
   id: string;
@@ -98,7 +99,11 @@ const CategorySection: React.FC = () => {
         <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
           <Pressable style={styles.modalContent} onPress={e => e.stopPropagation()}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>New Category</Text>
+
+              <View style={styles.modalTitle}>
+                <Image source={FolderIcon} style={{ width: 24, height: 24 }} />
+                <Text style={styles.modalTitleText}>New Category</Text>
+              </View>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
                 <X size={24} color="#666" />
               </TouchableOpacity>
@@ -208,11 +213,16 @@ const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    //alignItems: 'center',
     marginBottom: 8,
   },
   modalTitle: {
-    fontSize: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 4,
+  },
+  modalTitleText: {
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#333',
   },
@@ -236,6 +246,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    color: '#000000'
   },
   createButtonDisabled: {
     backgroundColor: '#B4B4B4',
