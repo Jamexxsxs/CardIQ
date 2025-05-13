@@ -1,7 +1,6 @@
 import React from "react"
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-
 export interface Activity {
   id: string
   subject: string
@@ -19,7 +18,7 @@ const recentActivities: Activity[] = [
     chapter: "Chapter 3: Animal Kingdom",
     cardCount: 15,
     date: "Friday, March 28 2025",
-    color: "#27AE60",
+    color: "#4DC591",
   },
   {
     id: "2",
@@ -27,7 +26,15 @@ const recentActivities: Activity[] = [
     chapter: "Algebra",
     cardCount: 15,
     date: "Friday, March 28 2025",
-    color: "#F5A623",
+    color: "#F09E54",
+  },
+  {
+    id: "3",
+    subject: "Geography",
+    chapter: "Chapter 1",
+    cardCount: 15,
+    date: "Friday, March 28 2025",
+    color: "#8F98FF",
   },
 ]
 
@@ -51,6 +58,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => {
         <TouchableOpacity style={styles.menuButton}>
           <Ionicons name="ellipsis-vertical" size={20} color="white" />
         </TouchableOpacity>
+        <View style={styles.decorativeShape} />
       </View>
     </TouchableOpacity>
   )
@@ -85,6 +93,7 @@ const styles = StyleSheet.create({
   activityCard: {
     borderRadius: 16,
     padding: 16,
+    overflow: "hidden",
   },
   cardContent: {
     flexDirection: "row",
@@ -122,6 +131,17 @@ const styles = StyleSheet.create({
     height: 24,
     justifyContent: "center",
     alignItems: "center",
+    zIndex: 1,
+  },
+  decorativeShape: {
+    position: 'absolute',
+    right: -25,
+    top: -30,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#000000',
+    opacity: 0.5,
   },
 })
 
