@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MoveVertical as MoreVertical } from 'lucide-react';
+import { MoveVertical as MoreVertical } from 'lucide-react-native';
 
 interface Activity {
   id: string;

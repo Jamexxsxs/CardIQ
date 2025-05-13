@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Share2, MoveVertical as MoreVertical, Flame } from 'lucide-react';
+import { Share2, MoveVertical as MoreVertical, Flame } from 'lucide-react-native';
 import StatsCard from "../components/profile/StatsCard"
 import RecentlyAddedCard from '../components/profile/RecentlyAddedCard';
 
