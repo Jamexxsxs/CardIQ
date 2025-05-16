@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Share2, MoveVertical as MoreVertical, Flame } from 'lucide-react-native';
+// import { Share2, MoveVertical as MoreVertical, Flame } from 'lucide-react-native';
 import StatsCard from "../components/profile/StatsCard"
 import RecentlyAddedCard from '../components/profile/RecentlyAddedCard';
+import { Feather } from '@expo/vector-icons';
+
 
 const recentlyAdded = [
   {
@@ -45,7 +47,7 @@ const Profile: React.FC = () => {
           </View>
           <Text style={styles.username}>Yushi Coquilla</Text>
           <TouchableOpacity style={styles.shareButton}>
-            <Share2 size={20} color="#4A86E8" />
+            {/* <Share2 size={20} color="#4A86E8" /> */}
           </TouchableOpacity>
         </View>
 
@@ -54,7 +56,9 @@ const Profile: React.FC = () => {
           
           <View style={styles.streakCard}>
             <View style={styles.streakInfo}>
-              <Flame size={24} color="#FF6B00" style={styles.streakIcon} />
+              {/* <Flame size={24} color="#FF6B00" style={styles.streakIcon} /> */}
+              {/* <Feather name="flame" size={20} color="#FF6B00" /> */}
+
               <View>
                 <Text style={styles.streakTitle}>Current Streak</Text>
                 <Text style={styles.streakSubtitle}>Don't Break it!</Text>

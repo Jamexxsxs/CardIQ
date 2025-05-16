@@ -1,5 +1,6 @@
 import { NavigationContainer } from "@react-navigation/native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { createStackNavigator } from "@react-navigation/stack"
 import { Ionicons } from "@expo/vector-icons"
 import { StatusBar } from "expo-status-bar"
 import { SafeAreaProvider } from "react-native-safe-area-context"
@@ -8,14 +9,34 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 import Home from "./pages/Home"
 import Flashcard from "./pages/Flashcard"
 import Profile from "./pages/Profile"
+import CategoryContent from "./components/home/CategoryContent"
+import FlashcardDetail from "./components/home/FlashcardDetail"
 
 type RootTabParamList = {
-  Home: undefined
+  HomeStack: undefined
   Flashcard: undefined
   Profile: undefined
 }
 
+type HomeStackParamList = {
+  Home: undefined
+  CategoryContent: { id: string, title: string }
+  FlashcardDetail: { id: string }
+}
+
 const Tab = createBottomTabNavigator<RootTabParamList>()
+const HomeStack = createStackNavigator<HomeStackParamList>()
+
+// Create a stack navigator for the Home tab and its related screens
+function HomeStackScreen() {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="Home" component={Home} />
+      <HomeStack.Screen name="CategoryContent" component={CategoryContent} />
+      <HomeStack.Screen name="FlashcardDetail" component={FlashcardDetail} />
+    </HomeStack.Navigator>
+  )
+}
 
 export default function App() {
   return (
@@ -27,7 +48,7 @@ export default function App() {
             tabBarIcon: ({ focused, color, size }) => {
               let iconName: keyof typeof Ionicons.glyphMap = "help-outline"
 
-              if (route.name === "Home") {
+              if (route.name === "HomeStack") {
                 iconName = focused ? "home" : "home-outline"
               } else if (route.name === "Flashcard") {
                 iconName = focused ? "add-circle" : "add-circle-outline"
@@ -42,7 +63,11 @@ export default function App() {
             headerShown: false,
           })}
         >
-          <Tab.Screen name="Home" component={Home} />
+          <Tab.Screen 
+            name="HomeStack" 
+            component={HomeStackScreen} 
+            options={{ tabBarLabel: "Home" }}
+          />
           <Tab.Screen
             name="Flashcard"
             component={Flashcard}

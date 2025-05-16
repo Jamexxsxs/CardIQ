@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MoveVertical as MoreVertical } from 'lucide-react-native';
+// import { MoveVertical as MoreVertical } from 'lucide-react-native';
+import { Feather } from '@expo/vector-icons';
+
 
 interface Activity {
   id: string;
@@ -25,7 +27,7 @@ const RecentlyAddedCard: React.FC<RecentlyAddedCardProps> = ({ activity }) => {
         <View style={styles.headerRow}>
           <Text style={styles.subject}>{activity.subject}</Text>
           <TouchableOpacity style={styles.menuButton}>
-            <MoreVertical size={20} color="white" />
+            <Feather name="more-vertical" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
         <Text style={styles.chapter}>{activity.chapter}</Text>

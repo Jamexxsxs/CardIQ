@@ -7,12 +7,12 @@ import Header from "../components/Header"
 import CategorySection from "../components/home/CategorySection"
 import RecentActivitySection from "../components/home/RecentActivitySection"
 
-const Home: React.FC = () => {
+const Home = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <Header username="Yushi" />
-        <CategorySection />
+        <CategorySection navigation={navigation} />
         <RecentActivitySection />
       </ScrollView>
     </SafeAreaView>

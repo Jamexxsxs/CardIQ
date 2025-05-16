@@ -1,8 +1,8 @@
+// CategorySection.jsx
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Pressable, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { X } from "lucide-react-native";
-import FolderIcon from '../../assets/folder-icon.png';
+import { Feather } from '@expo/vector-icons';
 
 export interface Category {
   id: string;
@@ -40,11 +40,15 @@ const categories: Category[] = [
 
 interface CategoryCardProps {
   category: Category;
+  navigation: any;
 }
 
-const CategoryCard: React.FC<CategoryCardProps> = ({ category }) => {
+const CategoryCard: React.FC<CategoryCardProps> = ({ category, navigation }) => {
   return (
-    <TouchableOpacity style={[styles.categoryCard, { backgroundColor: category.color }]}>
+    <TouchableOpacity 
+      style={[styles.categoryCard, { backgroundColor: category.color }]}
+      onPress={() => navigation.navigate('CategoryContent', { id: category.id, title: category.title })}
+    >
       <View style={styles.categoryHeader}>
         <View style={styles.iconContainer}>
           {category.icon === "math" ? (
@@ -75,7 +79,11 @@ const AddCategoryButton: React.FC<AddCategoryButtonProps> = ({ onPress }) => {
   );
 };
 
-const CategorySection: React.FC = () => {
+interface CategorySectionProps {
+  navigation: any;
+}
+
+const CategorySection: React.FC<CategorySectionProps> = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [categoryName, setCategoryName] = useState("");
 
@@ -91,7 +99,7 @@ const CategorySection: React.FC = () => {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <AddCategoryButton onPress={() => setModalVisible(true)} />
         {categories.map((category) => (
-          <CategoryCard key={category.id} category={category} />
+          <CategoryCard key={category.id} category={category} navigation={navigation} />
         ))}
       </ScrollView>
 
@@ -99,13 +107,9 @@ const CategorySection: React.FC = () => {
         <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
           <Pressable style={styles.modalContent} onPress={e => e.stopPropagation()}>
             <View style={styles.modalHeader}>
-
-              <View style={styles.modalTitle}>
-                <Image source={FolderIcon} style={{ width: 24, height: 24 }} />
-                <Text style={styles.modalTitleText}>New Category</Text>
-              </View>
+              <Text style={styles.modalTitle}>New Category</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-                <X size={24} color="#666" />
+                <Feather name="x" size={24} color="#666" />
               </TouchableOpacity>
             </View>
             <Text style={styles.modalSubtitle}>
@@ -213,16 +217,11 @@ const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    //alignItems: 'center',
+    alignItems: 'center',
     marginBottom: 8,
   },
   modalTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    columnGap: 4,
-  },
-  modalTitleText: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
   },
@@ -242,11 +241,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   createButton: {
-    backgroundColor: '#578FCA',
+    backgroundColor: '#4A86E8',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    color: '#000000'
   },
   createButtonDisabled: {
     backgroundColor: '#B4B4B4',
