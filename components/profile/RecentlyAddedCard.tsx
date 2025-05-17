@@ -26,9 +26,10 @@ const RecentlyAddedCard: React.FC<RecentlyAddedCardProps> = ({ activity }) => {
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <Text style={styles.subject}>{activity.subject}</Text>
-          <TouchableOpacity style={styles.menuButton}>
-            <Feather name="more-vertical" size={20} color="#fff" />
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.menuButton}>
+              <Feather name="more-vertical" size={20} color="#fff" zIndex={1} />
+            </TouchableOpacity>
+            <View style={styles.decorativeShape} />
         </View>
         <Text style={styles.chapter}>{activity.chapter}</Text>
         <View style={styles.footer}>
@@ -37,7 +38,10 @@ const RecentlyAddedCard: React.FC<RecentlyAddedCardProps> = ({ activity }) => {
           <Text style={styles.date}>{activity.date}</Text>
         </View>
       </View>
+    
+      
     </TouchableOpacity>
+    
   );
 };
 
@@ -61,11 +65,11 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   menuButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
   },
   chapter: {
     fontSize: 16,
@@ -87,6 +91,16 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 14,
     color: 'white',
+  },
+   decorativeShape: {
+    position: 'absolute',
+    right: -25,
+    top: -30,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#000000',
+    opacity: 0.5,
   },
 });
 

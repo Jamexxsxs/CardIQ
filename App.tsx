@@ -1,3 +1,4 @@
+import React, { useState } from 'react'
 import { NavigationContainer } from "@react-navigation/native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { createStackNavigator } from "@react-navigation/stack"
@@ -5,10 +6,12 @@ import { Ionicons } from "@expo/vector-icons"
 import { StatusBar } from "expo-status-bar"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
-// Import pages
 import Home from "./pages/Home"
 import Flashcard from "./pages/Flashcard"
 import Profile from "./pages/Profile"
+import Login from "./pages/Login"
+import SignUp from "./pages/SignUp"
+// import Welcome from "./pages/Welcome";
 import CategoryContent from "./components/home/CategoryContent"
 import FlashcardDetail from "./components/home/FlashcardDetail"
 
@@ -20,14 +23,21 @@ type RootTabParamList = {
 
 type HomeStackParamList = {
   Home: undefined
-  CategoryContent: { id: string, title: string }
+  CategoryContent: { id: string; title: string }
   FlashcardDetail: { id: string }
 }
 
+type AuthStackParamList = {
+  Login: undefined;
+  SignUp: undefined;
+};
+
 const Tab = createBottomTabNavigator<RootTabParamList>()
 const HomeStack = createStackNavigator<HomeStackParamList>()
+const AuthStack = createStackNavigator<AuthStackParamList>()
+const RootStack = createStackNavigator<{ Main: undefined; Auth: undefined }>();
 
-// Create a stack navigator for the Home tab and its related screens
+// Home stack navigator
 function HomeStackScreen() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
@@ -35,61 +45,100 @@ function HomeStackScreen() {
       <HomeStack.Screen name="CategoryContent" component={CategoryContent} />
       <HomeStack.Screen name="FlashcardDetail" component={FlashcardDetail} />
     </HomeStack.Navigator>
-  )
+  );
 }
 
+// Auth stack navigator
+function AuthStackScreen() {
+  return (
+    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="Login" component={Login} />
+      <AuthStack.Screen name="SignUp" component={SignUp} />
+    </AuthStack.Navigator>
+  );
+}
+
+// Main tab navigator
+function MainTabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap = "help-outline"
+
+          if (route.name === "HomeStack") {
+            iconName = focused ? "home" : "home-outline"
+          } else if (route.name === "Flashcard") {
+            iconName = focused ? "add-circle" : "add-circle-outline"
+          } else if (route.name === "Profile") {
+            iconName = focused ? "person" : "person-outline"
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />
+        },
+        tabBarActiveTintColor: "#4A86E8",
+        tabBarInactiveTintColor: "gray",
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen
+        name="HomeStack"
+        component={HomeStackScreen}
+        options={{ tabBarLabel: "Home" }}
+      />
+      <Tab.Screen
+        name="Flashcard"
+        component={Flashcard}
+        options={{
+          tabBarLabel: "Flashcard",
+          tabBarIcon: ({ size }) => (
+            <Ionicons
+              name="add"
+              size={size}
+              color="white"
+              style={{
+                backgroundColor: "#4A86E8",
+                borderRadius: 8,
+                padding: 5,
+              }}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen name="Profile" component={Profile} />
+    </Tab.Navigator>
+  );
+}
+
+export const AuthContext = React.createContext({
+  isLoggedIn: true,
+  login: () => {},
+  logout: () => {},
+});
+
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+
+  const authContext = {
+    isLoggedIn,
+    login: () => setIsLoggedIn(true),
+    logout: () => setIsLoggedIn(false),
+  };
+
   return (
     <SafeAreaProvider>
       <StatusBar style="auto" />
-      <NavigationContainer>
-        <Tab.Navigator
-          screenOptions={({ route }) => ({
-            tabBarIcon: ({ focused, color, size }) => {
-              let iconName: keyof typeof Ionicons.glyphMap = "help-outline"
-
-              if (route.name === "HomeStack") {
-                iconName = focused ? "home" : "home-outline"
-              } else if (route.name === "Flashcard") {
-                iconName = focused ? "add-circle" : "add-circle-outline"
-              } else if (route.name === "Profile") {
-                iconName = focused ? "person" : "person-outline"
-              }
-
-              return <Ionicons name={iconName} size={size} color={color} />
-            },
-            tabBarActiveTintColor: "#4A86E8",
-            tabBarInactiveTintColor: "gray",
-            headerShown: false,
-          })}
-        >
-          <Tab.Screen 
-            name="HomeStack" 
-            component={HomeStackScreen} 
-            options={{ tabBarLabel: "Home" }}
-          />
-          <Tab.Screen
-            name="Flashcard"
-            component={Flashcard}
-            options={{
-              tabBarLabel: "Flashcard",
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons
-                  name="add"
-                  size={size}
-                  color="white"
-                  style={{
-                    backgroundColor: "#4A86E8",
-                    borderRadius: 8,
-                    padding: 5,
-                  }}
-                />
-              ),
-            }}
-          />
-          <Tab.Screen name="Profile" component={Profile} />
-        </Tab.Navigator>
-      </NavigationContainer>
+      <AuthContext.Provider value={authContext}>
+        <NavigationContainer>
+          <RootStack.Navigator screenOptions={{ headerShown: false }}>
+            {isLoggedIn ? (
+              <RootStack.Screen name="Main" component={MainTabNavigator} />
+            ) : (
+              <RootStack.Screen name="Auth" component={AuthStackScreen} />
+            )}
+          </RootStack.Navigator>
+        </NavigationContainer>
+      </AuthContext.Provider>
     </SafeAreaProvider>
   )
 }

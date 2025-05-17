@@ -1,19 +1,10 @@
-import type React from "react"
+import React, { useContext } from "react"
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-// import { Share2, LogOut, Flame } from "lucide-react-native"
-import { useNavigation } from "@react-navigation/native"
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
-import StatsCard from "../components/profile/StatsCard"
-import RecentlyAddedCard from "../components/profile/RecentlyAddedCard"
-
-type RootStackParamList = {
-  Welcome: undefined
-}
-
-type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>
 import { Feather } from '@expo/vector-icons';
-
+import StatsCard from "../components/profile/StatsCard";
+import RecentlyAddedCard from "../components/profile/RecentlyAddedCard";
+import { AuthContext } from "../App"; 
 
 const recentlyAdded = [
   {
@@ -22,7 +13,7 @@ const recentlyAdded = [
     chapter: "Chapter 3: Animal Kingdom",
     cardCount: 15,
     date: "Friday, March 28 2025",
-    color: "#27AE60",
+    color: "#4DC591",
   },
   {
     id: "2",
@@ -30,7 +21,7 @@ const recentlyAdded = [
     chapter: "Algebra",
     cardCount: 15,
     date: "Friday, March 28 2025",
-    color: "#F5A623",
+    color: "#F09E54",
   },
   {
     id: "3",
@@ -38,12 +29,12 @@ const recentlyAdded = [
     chapter: "Chapter 4: Plant Kingdom",
     cardCount: 12,
     date: "Thursday, March 27 2025",
-    color: "#9B59B6",
+    color: "#8F98FF",
   },
 ]
 
-const Profile: React.FC = () => {
-  const navigation = useNavigation<ProfileScreenNavigationProp>()
+const Profile = () => {
+  const { logout } = useContext(AuthContext);
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -54,14 +45,8 @@ const Profile: React.FC = () => {
       {
         text: "Logout",
         onPress: () => {
-          // Here you would clear any auth tokens or user data
-          // For example: await AsyncStorage.removeItem('userToken');
-
-          // Navigate to Welcome screen
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Welcome" }],
-          })
+          console.log("User logged out");
+          logout();
         },
         style: "destructive",
       },
@@ -82,10 +67,10 @@ const Profile: React.FC = () => {
           </View>
           <Text style={styles.username}>Yushi Coquilla</Text>
           <TouchableOpacity style={styles.iconButton} onPress={() => {}}>
-            {/* <Share2 size={20} color="#4A86E8" /> */}
+            <Feather name="share-2" size={20} color="#4A86E8" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
-            <LogOut size={20} color="#FF3B30" />
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
 
@@ -94,9 +79,7 @@ const Profile: React.FC = () => {
 
           <View style={styles.streakCard}>
             <View style={styles.streakInfo}>
-              {/* <Flame size={24} color="#FF6B00" style={styles.streakIcon} /> */}
-              {/* <Feather name="flame" size={20} color="#FF6B00" /> */}
-
+              <Feather name="info" size={24} color="#FF6B00" style={styles.streakIcon} />
               <View>
                 <Text style={styles.streakTitle}>Current Streak</Text>
                 <Text style={styles.streakSubtitle}>Don't Break it!</Text>
@@ -181,6 +164,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 8,
+  },
+  logoutButton: {
+    backgroundColor: "#FF3B30",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  logoutText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
   sectionContainer: {
     marginBottom: 24,
