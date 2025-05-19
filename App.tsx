@@ -1,40 +1,41 @@
-import React, { useState } from 'react'
-import { NavigationContainer } from "@react-navigation/native"
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
-import { createStackNavigator } from "@react-navigation/stack"
-import { Ionicons } from "@expo/vector-icons"
-import { StatusBar } from "expo-status-bar"
-import { SafeAreaProvider } from "react-native-safe-area-context"
+// App.tsx
+import React, { useState, useContext } from 'react';
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from "@react-navigation/stack";
+import { Ionicons } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import Home from "./pages/Home"
-import Flashcard from "./pages/Flashcard"
-import Profile from "./pages/Profile"
-import Login from "./pages/Login"
-import SignUp from "./pages/SignUp"
-// import Welcome from "./pages/Welcome";
-import CategoryContent from "./components/home/CategoryContent"
-import FlashcardDetail from "./components/home/FlashcardDetail"
+import Home from "./pages/Home";
+import Flashcard from "./pages/Flashcard";
+import Profile from "./pages/Profile";
+import Login from "./pages/Login";
+import SignUp from "./pages/SignUp";
+import CategoryContent from "./components/home/CategoryContent";
+import FlashcardDetail from "./components/home/FlashcardDetail";
+import FlashcardModal from "./components/flashcard/FlashcardModal";
 
 type RootTabParamList = {
-  HomeStack: undefined
-  Flashcard: undefined
-  Profile: undefined
-}
+  HomeStack: undefined;
+  Flashcard: undefined;
+  Profile: undefined;
+};
 
 type HomeStackParamList = {
-  Home: undefined
-  CategoryContent: { id: string; title: string }
-  FlashcardDetail: { id: string }
-}
+  Home: undefined;
+  CategoryContent: { id: string; title: string };
+  FlashcardDetail: { id: string };
+};
 
 type AuthStackParamList = {
   Login: undefined;
   SignUp: undefined;
 };
 
-const Tab = createBottomTabNavigator<RootTabParamList>()
-const HomeStack = createStackNavigator<HomeStackParamList>()
-const AuthStack = createStackNavigator<AuthStackParamList>()
+const Tab = createBottomTabNavigator<RootTabParamList>();
+const HomeStack = createStackNavigator<HomeStackParamList>();
+const AuthStack = createStackNavigator<AuthStackParamList>();
 const RootStack = createStackNavigator<{ Main: undefined; Auth: undefined }>();
 
 // Home stack navigator
@@ -60,53 +61,71 @@ function AuthStackScreen() {
 
 // Main tab navigator
 function MainTabNavigator() {
+  const [flashcardModalVisible, setFlashcardModalVisible] = useState(false);
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = "help-outline"
+    <>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName: keyof typeof Ionicons.glyphMap = "help-outline";
 
-          if (route.name === "HomeStack") {
-            iconName = focused ? "home" : "home-outline"
-          } else if (route.name === "Flashcard") {
-            iconName = focused ? "add-circle" : "add-circle-outline"
-          } else if (route.name === "Profile") {
-            iconName = focused ? "person" : "person-outline"
-          }
+            if (route.name === "HomeStack") {
+              iconName = focused ? "home" : "home-outline";
+            } else if (route.name === "Flashcard") {
+              iconName = focused ? "add-circle" : "add-circle-outline";
+            } else if (route.name === "Profile") {
+              iconName = focused ? "person" : "person-outline";
+            }
 
-          return <Ionicons name={iconName} size={size} color={color} />
-        },
-        tabBarActiveTintColor: "#4A86E8",
-        tabBarInactiveTintColor: "gray",
-        headerShown: false,
-      })}
-    >
-      <Tab.Screen
-        name="HomeStack"
-        component={HomeStackScreen}
-        options={{ tabBarLabel: "Home" }}
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: "#4A86E8",
+          tabBarInactiveTintColor: "gray",
+          headerShown: false,
+        })}
+      >
+        <Tab.Screen
+          name="HomeStack"
+          component={HomeStackScreen}
+          options={{ tabBarLabel: "Home" }}
+        />
+        <Tab.Screen
+          name="Flashcard"
+          component={Flashcard}
+          options={{
+            tabBarLabel: "Flashcard",
+            tabBarIcon: ({ size }) => (
+              <Ionicons
+                name="add"
+                size={size}
+                color="white"
+                style={{
+                  backgroundColor: "#4A86E8",
+                  borderRadius: 8,
+                  padding: 5,
+                }}
+              />
+            ),
+          }}
+          listeners={{
+            tabPress: (e) => {
+              // Prevent default action
+              e.preventDefault();
+              // Show modal instead
+              setFlashcardModalVisible(true);
+            },
+          }}
+        />
+        <Tab.Screen name="Profile" component={Profile} />
+      </Tab.Navigator>
+
+      {/* Flashcard Modal */}
+      <FlashcardModal
+        visible={flashcardModalVisible}
+        onClose={() => setFlashcardModalVisible(false)}
       />
-      <Tab.Screen
-        name="Flashcard"
-        component={Flashcard}
-        options={{
-          tabBarLabel: "Flashcard",
-          tabBarIcon: ({ size }) => (
-            <Ionicons
-              name="add"
-              size={size}
-              color="white"
-              style={{
-                backgroundColor: "#4A86E8",
-                borderRadius: 8,
-                padding: 5,
-              }}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen name="Profile" component={Profile} />
-    </Tab.Navigator>
+    </>
   );
 }
 
@@ -140,5 +159,5 @@ export default function App() {
         </NavigationContainer>
       </AuthContext.Provider>
     </SafeAreaProvider>
-  )
+  );
 }
