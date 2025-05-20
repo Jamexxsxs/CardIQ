@@ -1,11 +1,12 @@
 // App.tsx
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import Home from "./pages/Home";
 import Flashcard from "./pages/Flashcard";
@@ -129,19 +130,55 @@ function MainTabNavigator() {
   );
 }
 
-export const AuthContext = React.createContext({
-  isLoggedIn: true,
-  login: () => {},
-  logout: () => {},
+interface AuthContextType {
+  isLoggedIn: boolean;
+  userId: number | null;
+  login: (userId: number, rememberMe?: boolean) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+export const AuthContext = React.createContext<AuthContextType>({
+  isLoggedIn: false,
+  userId: null,
+  login: async () => {},
+  logout: async () => {},
 });
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (storedUserId) {
+          setUserId(Number(storedUserId));
+          setIsLoggedIn(true);
+        }
+      } catch (err) {
+        console.error('Failed to load user ID:', err);
+      }
+    };
+
+    loadUserData();
+  }, []);
 
   const authContext = {
     isLoggedIn,
-    login: () => setIsLoggedIn(true),
-    logout: () => setIsLoggedIn(false),
+    userId,
+    login: async (id: number, remember: boolean = true) => {
+      setUserId(id);
+      setIsLoggedIn(true);
+      if (remember) {
+        await AsyncStorage.setItem('userId', id.toString());
+      }
+    },
+    logout: async () => {
+      setUserId(null);
+      setIsLoggedIn(false);
+      await AsyncStorage.removeItem('userId');
+    },
   };
 
   return (

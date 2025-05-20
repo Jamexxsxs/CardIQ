@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthContext } from '../App'; 
+import { useUserTable } from '../hooks/useUserTable'
 
 type AuthStackParamList = {
   Welcome: undefined;
@@ -15,6 +16,8 @@ type AuthStackParamList = {
 type SignUpScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'SignUp'>;
 
 const SignUp = () => {
+  const { addUser } = useUserTable();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,9 +26,22 @@ const SignUp = () => {
   const navigation = useNavigation<SignUpScreenNavigationProp>();
   const { login } = useContext(AuthContext); 
 
-  const handleSignUp = () => {
-    // call login from AuthContext
-    login();
+  const handleSignUp = async () => {
+    if (!name || !email || !password) {
+      alert('Please fill in all fields.');
+      return;
+    }
+
+    try {
+      const userId = await addUser(name, email, password);
+      console.log(userId)
+      if (userId) {
+        login(userId, rememberMe); 
+      }
+    } catch (error) {
+      console.error('Sign up failed:', error);
+      alert('Something went wrong. Please try again.');
+    }
   };
 
   return (

@@ -2,30 +2,39 @@ import { useEffect, useState } from 'react';
 import * as SQLite from 'expo-sqlite';
 import bcrypt from 'bcryptjs';
 
-const db = SQLite.openDatabaseSync('userIQ.db');
+const db = SQLite.openDatabaseSync('cardIQ.db');
 
 export function useUserTable() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    db.execAsync(
-      `CREATE TABLE IF NOT EXISTS user (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL,
-        email TEXT NOT NULL,
-        password TEXT NOT NULL,
-      );`
-    );
-  }, []);
+  const createTable = async () => {
+    try {
+      await db.execAsync(
+        `CREATE TABLE IF NOT EXISTS user (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT NOT NULL,
+          email TEXT NOT NULL,
+          password TEXT NOT NULL
+        );`
+      );
+    } catch (err) {
+      console.error('Failed to create user table:', err);
+    }
+  };
+
+  createTable();
+}, []);
 
   const addUser = async (username: string, email: string, password: string) => {
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      await db.runAsync(
+      const result = await db.runAsync(
         'INSERT INTO user (username, email, password) VALUES (?, ?, ?);',
-        [username, email, hashedPassword]
+        [username, email, password]
       );
+
+      return result.lastInsertRowId;
     } catch (err) {
       console.error('Add user error:', err);
     }
@@ -36,8 +45,7 @@ export function useUserTable() {
       const row = await db.getFirstAsync('SELECT * FROM user WHERE email = ?;', [email]) as any;
       if (!row) return null;
 
-      const isMatch = await bcrypt.compare(password, row.password);
-      return isMatch ? row.id : null;
+      return row.password === password ? row.id : null;
     } catch (err) {
       console.error('Auth error:', err);
       return null;

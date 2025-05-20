@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthContext } from '../App'; 
+import { useUserTable } from '../hooks/useUserTable';
 
 type AuthStackParamList = {
   Welcome: undefined;
@@ -15,14 +16,26 @@ type AuthStackParamList = {
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
 const Login = () => {
+  const {authenticateUser} = useUserTable();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigation = useNavigation<LoginScreenNavigationProp>();
   const { login } = useContext(AuthContext);
 
-  const handleLogin = () => {
-    login();
+  const handleLogin = async () => {
+    if (!email || !password) {
+      alert('Please enter both email and password');
+      return;
+    }
+
+    const userId = await authenticateUser(email, password);
+    
+    if (userId) {
+      login(userId);  
+    } else {
+      alert('Invalid email or password');
+    }
   };
 
   return (
