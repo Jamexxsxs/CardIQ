@@ -15,16 +15,24 @@ export function useCategoryTable(user_id: number) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    db.execAsync(
-      `CREATE TABLE IF NOT EXISTS category (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        color TEXT NOT NULL,
-        user_id INTEGER NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
-      );`
-    ).then(() => fetchCategories());
-  }, []);
+      const createTable = async () => {
+        try {
+          await db.execAsync(
+            `CREATE TABLE IF NOT EXISTS category (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              name TEXT NOT NULL,
+              color TEXT NOT NULL,
+              user_id INTEGER NOT NULL,
+              FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+            );`
+          );
+        } catch (err) {
+          console.error('Failed to create user table:', err);
+        }
+      };
+  
+      createTable();
+    }, []);
 
   const fetchCategories = () => {
     setLoading(true);
@@ -49,7 +57,7 @@ export function useCategoryTable(user_id: number) {
 
   const addCategory = (name: string) => {
     const color = getRandomLightColor();
-    db.runAsync('INSERT INTO category (name, color, user_id) VALUES (?, ?);', [name, color, user_id])
+    db.runAsync('INSERT INTO category (name, color, user_id) VALUES (?, ?, ?);', [name, color, user_id])
       .then(() => console.log('Category added'))
       .catch(err => console.error('Error:', err));
   };

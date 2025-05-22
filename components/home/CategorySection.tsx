@@ -1,8 +1,10 @@
 // CategorySection.jsx
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Feather } from '@expo/vector-icons';
+import { useCategoryTable } from "../../hooks/useCategoryTable";
+import { AuthContext } from "../../App";
 
 export interface Category {
   id: string;
@@ -44,6 +46,7 @@ interface CategoryCardProps {
 }
 
 const CategoryCard: React.FC<CategoryCardProps> = ({ category, navigation }) => {
+
   return (
     <TouchableOpacity 
       style={[styles.categoryCard, { backgroundColor: category.color }]}
@@ -84,11 +87,17 @@ interface CategorySectionProps {
 }
 
 const CategorySection: React.FC<CategorySectionProps> = ({ navigation }) => {
+  const { userId } = useContext(AuthContext);
+  const { addCategory, refresh } = useCategoryTable(userId);
   const [modalVisible, setModalVisible] = useState(false);
   const [categoryName, setCategoryName] = useState("");
 
-  const handleCreateCategory = () => {
-    // Handle category creation logic here
+  const handleCreateCategory = async() => {
+    await addCategory(categoryName)
+
+    const data = await refresh();
+
+
     setModalVisible(false);
     setCategoryName("");
   };

@@ -9,23 +9,23 @@ export function useUserTable() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  const createTable = async () => {
-    try {
-      await db.execAsync(
-        `CREATE TABLE IF NOT EXISTS user (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          username TEXT NOT NULL,
-          email TEXT NOT NULL,
-          password TEXT NOT NULL
-        );`
-      );
-    } catch (err) {
-      console.error('Failed to create user table:', err);
-    }
-  };
+    const createTable = async () => {
+      try {
+        await db.execAsync(
+          `CREATE TABLE IF NOT EXISTS user (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            email TEXT NOT NULL,
+            password TEXT NOT NULL
+          );`
+        );
+      } catch (err) {
+        console.error('Failed to create user table:', err);
+      }
+    };
 
-  createTable();
-}, []);
+    createTable();
+  }, []);
 
   const addUser = async (username: string, email: string, password: string) => {
     try {
