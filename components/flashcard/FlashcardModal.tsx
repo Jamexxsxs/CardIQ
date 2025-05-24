@@ -1,78 +1,28 @@
-// components/FlashcardModal.tsx
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Modal, 
-  TouchableOpacity, 
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Image
-} from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
-import ImportFromFile from './ImportFile';
-import GeneratePrompt from './GeneratePrompt';
+"use client"
+
+import type React from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  Image,
+  TouchableWithoutFeedback,
+} from "react-native"
+import { Feather, Ionicons } from "@expo/vector-icons"
 
 interface FlashcardModalProps {
   visible: boolean;
-  onClose: () => void;
+  onClose: () => void
+  onSelectOption: (type: "generate" | "import") => void
 }
 
-const FlashcardModal: React.FC<FlashcardModalProps> = ({ visible, onClose }) => {
-  const [currentScreen, setCurrentScreen] = useState<'main' | 'import' | 'generate'>('main');
-
-  const renderMainScreen = () => (
-    <View style={styles.modalContent}>
-      <View style={styles.modalHeader}>
-        <View style={styles.headerLeft}>
-          <Ionicons name="folder" size={24} color="#4A86E8" />
-          <Text style={styles.modalTitle}>New Flashcards</Text>
-        </View>
-        <TouchableOpacity onPress={onClose}>
-          <Feather name="x" size={24} color="#666" />
-        </TouchableOpacity>
-      </View>
-      
-      <TouchableOpacity 
-        style={styles.optionCard}
-        onPress={() => setCurrentScreen('generate')}
-      >
-        <View style={styles.optionIconContainer}>
-          <View style={styles.searchIconCircle}>
-            <Feather name="search" size={20} color="#4A86E8" />
-          </View>
-        </View>
-        <View style={styles.optionTextContainer}>
-          <Text style={styles.optionTitle}>Generate with Prompt</Text>
-          <Text style={styles.optionDescription}>
-            Just describe what you want to learn and we'll turn it into flashcards.
-          </Text>
-        </View>
-      </TouchableOpacity>
-      
-      <TouchableOpacity 
-        style={styles.optionCard}
-        onPress={() => setCurrentScreen('import')}
-      >
-        <View style={styles.optionIconContainer}>
-          <Image 
-            source={require('../../assets/folder-icon.png')} 
-            style={styles.folderIcon}
-          />
-        </View>
-        <View style={styles.optionTextContainer}>
-          <Text style={styles.optionTitle}>Import from File</Text>
-          <Text style={styles.optionDescription}>
-            Upload a PDF, PPT, or text file and we'll convert it to flashcards.
-          </Text>
-        </View>
-      </TouchableOpacity>
-    </View>
-  );
-
+const FlashcardModal: React.FC<FlashcardModalProps> = ({
+  visible,
+  onClose,
+  onSelectOption,
+}) => {
   return (
     <Modal
       animationType="slide"
@@ -80,20 +30,64 @@ const FlashcardModal: React.FC<FlashcardModalProps> = ({ visible, onClose }) => 
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          {currentScreen === 'main' && renderMainScreen()}
-          {currentScreen === 'import' && (
-            <ImportFromFile onBack={() => setCurrentScreen('main')} onClose={onClose} />
-          )}
-          {currentScreen === 'generate' && (
-            <GeneratePrompt onBack={() => setCurrentScreen('main')} onClose={onClose} />
-          )}
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.centeredView}>
+          <TouchableWithoutFeedback onPress={() => {}}>
+            <View style={styles.modalView}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <View style={styles.headerLeft}>
+                    <Ionicons name="folder" size={24} color="#4A86E8" />
+                    <Text style={styles.modalTitle}>New Flashcards</Text>
+                  </View>
+                  <TouchableOpacity onPress={onClose}>
+                    <Feather name="x" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.optionCard}
+                  onPress={() => onSelectOption("generate")}
+                >
+                  <View style={styles.optionIconContainer}>
+                    <Image
+                      source={require("../../assets/search.png")}
+                      style={styles.folderIcon}
+                    />
+                  </View>
+                  <View style={styles.optionTextContainer}>
+                    <Text style={styles.optionTitle}>Generate with Prompt</Text>
+                    <Text style={styles.optionDescription}>
+                      Just describe what you want to learn and we'll turn it into flashcards.
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.optionCard}
+                  onPress={() => onSelectOption("import")}
+                >
+                  <View style={styles.optionIconContainer}>
+                    <Image
+                      source={require("../../assets/file.png")}
+                      style={styles.folderIcon}
+                    />
+                  </View>
+                  <View style={styles.optionTextContainer}>
+                    <Text style={styles.optionTitle}>Import from File</Text>
+                    <Text style={styles.optionDescription}>
+                      Upload a PDF, PPT, or text file and we'll convert it to flashcards.
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   centeredView: {
@@ -143,19 +137,11 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E1E3E6',
+    borderColor: "#606DA4",
   },
   optionIconContainer: {
     marginRight: 16,
-    justifyContent: 'center',
-  },
-  searchIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E8F1FF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
   },
   folderIcon: {
     width: 40,
