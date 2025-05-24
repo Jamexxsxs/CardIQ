@@ -168,6 +168,35 @@ const CardFlow = ({ route, navigation }) => {
 
   const categoryColor = category?.color || '#F09E54';
 
+  // Dynamic styles for flashcard with conditional shadow
+  const flashcardBase = {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+    padding: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backfaceVisibility: 'hidden',
+    ...(!isFlipping && {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 5,
+    })
+  };
+
+  const cardFrontStyles = {
+    ...flashcardBase,
+    backgroundColor: '#fff',
+  };
+
+  const cardBackStyles = {
+    ...flashcardBase,
+    backgroundColor: categoryColor,
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -205,8 +234,7 @@ const CardFlow = ({ route, navigation }) => {
           {/* Front side (Question) */}
           <Animated.View 
             style={[
-              styles.flashcard,
-              styles.cardFront,
+              cardFrontStyles,
               { transform: [{ rotateY: frontInterpolate }] }
             ]}
           >
@@ -219,11 +247,9 @@ const CardFlow = ({ route, navigation }) => {
           {/* Back side (Answer) */}
           <Animated.View 
             style={[
-              styles.flashcard,
-              styles.cardBack,
+              cardBackStyles,
               { 
                 transform: [{ rotateY: backInterpolate }],
-                backgroundColor: categoryColor 
               }
             ]}
           >
@@ -361,30 +387,6 @@ const styles = StyleSheet.create({
   },
   cardTouchable: {
     height: 250,
-  },
-  flashcard: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    borderRadius: 20,
-    padding: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    backfaceVisibility: 'hidden',
-  },
-  cardFront: {
-    backgroundColor: '#fff',
-  },
-  cardBack: {
-    backgroundColor: '#F09E54',
   },
   questionText: {
     fontSize: 24,
