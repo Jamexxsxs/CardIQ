@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import StatsCard from "../components/profile/StatsCard";
 import RecentlyAddedCard from "../components/profile/RecentlyAddedCard";
 import { AuthContext } from "../App"; 
+import { resetDatabase } from "../utils/dbUtils";
 
 const recentlyAdded = [
   {
@@ -66,8 +67,23 @@ const Profile = () => {
             />
           </View>
           <Text style={styles.username}>Yushi Coquilla</Text>
-          <TouchableOpacity style={styles.iconButton} onPress={() => {}}>
-            <Feather name="share-2" size={20} color="#4A86E8" />
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => {
+              Alert.alert("Reset Database", "Are you sure you want to reset the database? This action cannot be undone.", [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Reset",
+                  style: "destructive",
+                  onPress: async () => {
+                    await resetDatabase();
+                    Alert.alert("Database has been reset.");
+                  },
+                },
+              ]);
+            }}
+          >
+            <Feather name="trash-2" size={20} color="#FF3B30" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Logout</Text>

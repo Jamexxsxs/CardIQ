@@ -1,103 +1,125 @@
-// CategorySection.jsx
-import React, { useContext, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Pressable } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { Feather } from '@expo/vector-icons';
+import React, { useContext, useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Pressable,
+  Alert,
+  TouchableWithoutFeedback,
+} from "react-native";
+import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useCategoryTable } from "../../hooks/useCategoryTable";
 import { AuthContext } from "../../App";
 
 export interface Category {
   id: string;
-  title: string;
-  icon: string;
+  name: string;
   color: string;
 }
-
-const categories: Category[] = [
-  {
-    id: "1",
-    title: "Mathematics",
-    icon: "math",
-    color: "#4DC591",
-  },
-  {
-    id: "2",
-    title: "Geography",
-    icon: "globe",
-    color: "#F09E54",
-  },
-  {
-    id: "3",
-    title: "History",
-    icon: "history",
-    color: "#8F98FF",
-  },
-  {
-    id: "4",
-    title: "Physics",
-    icon: "physics",
-    color: "#4DC591",
-  },
-];
 
 interface CategoryCardProps {
   category: Category;
   navigation: any;
+  openMenuId: string | null;
+  setOpenMenuId: (id: string | null) => void;
+  deleteCategory: (id: number) => void;
+  refresh: () => void;
 }
 
-const CategoryCard: React.FC<CategoryCardProps> = ({ category, navigation }) => {
+const CategoryCard: React.FC<CategoryCardProps> = ({
+  category,
+  navigation,
+  openMenuId,
+  setOpenMenuId,
+  deleteCategory,
+  refresh,
+}) => {
+  const isMenuOpen = openMenuId === category.id;
+
+  const handleDeletePress = () => {
+    Alert.alert(
+      "Delete Category",
+      `Are you sure you want to delete "${category.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await deleteCategory(parseInt(category.id));
+            await refresh();
+            setOpenMenuId(null);
+          },
+        },
+      ]
+    );
+  };
 
   return (
-    <TouchableOpacity 
-      style={[styles.categoryCard, { backgroundColor: category.color }]}
-      onPress={() => navigation.navigate('CategoryContent', { id: category.id, title: category.title })}
-    >
-      <View style={styles.categoryHeader}>
-        <View style={styles.iconContainer}>
-          {category.icon === "math" ? (
-            <MaterialCommunityIcons name="function-variant" size={24} color="white" />
-          ) : (
-            <MaterialCommunityIcons name="earth" size={24} color="white" />
-          )}
+    <TouchableWithoutFeedback onPress={() => setOpenMenuId(null)}>
+      <TouchableOpacity
+        style={[styles.categoryCard, { backgroundColor: category.color }]}
+        onPress={() =>
+          navigation.navigate("CategoryContent", { id: category.id, title: category.name })
+        }
+        activeOpacity={0.8}
+      >
+        <View style={styles.categoryHeader}>
+          <View style={styles.iconContainer}>
+            <MaterialCommunityIcons name="folder" size={24} color="white" />
+          </View>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              setOpenMenuId(isMenuOpen ? null : category.id);
+            }}
+          >
+            <Ionicons name="ellipsis-vertical" size={20} color="white" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.menuButton}>
-          <Ionicons name="ellipsis-vertical" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.categoryTitle}>{category.title}</Text>
-      <View style={styles.decorativeShape}></View>
-    </TouchableOpacity>
+
+        {isMenuOpen && (
+          <TouchableWithoutFeedback onPress={() => setOpenMenuId(null)}>
+            <View style={styles.menuContainer}>
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
+                <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
+        )}
+
+        <Text style={styles.categoryTitle}>{category.name}</Text>
+        <View style={styles.decorativeShape}></View>
+      </TouchableOpacity>
+    </TouchableWithoutFeedback>
   );
 };
 
-interface AddCategoryButtonProps {
-  onPress: () => void;
-}
+const AddCategoryButton: React.FC<{ onPress: () => void }> = ({ onPress }) => (
+  <TouchableOpacity style={styles.addButton} onPress={onPress}>
+    <Ionicons name="add" size={30} color="white" />
+  </TouchableOpacity>
+);
 
-const AddCategoryButton: React.FC<AddCategoryButtonProps> = ({ onPress }) => {
-  return (
-    <TouchableOpacity style={styles.addButton} onPress={onPress}>
-      <Ionicons name="add" size={30} color="white" />
-    </TouchableOpacity>
-  );
-};
-
-interface CategorySectionProps {
-  navigation: any;
-}
-
-const CategorySection: React.FC<CategorySectionProps> = ({ navigation }) => {
+const CategorySection: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { userId } = useContext(AuthContext);
-  const { addCategory, refresh } = useCategoryTable(userId);
+  const { categories, addCategory, refresh, deleteCategory } = useCategoryTable(userId);
   const [modalVisible, setModalVisible] = useState(false);
   const [categoryName, setCategoryName] = useState("");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  const handleCreateCategory = async() => {
-    await addCategory(categoryName)
+  useEffect(() => {
+    refresh();
+  }, []);
 
-    const data = await refresh();
-
-
+  const handleCreateCategory = async () => {
+    await addCategory(categoryName);
+    await refresh();
     setModalVisible(false);
     setCategoryName("");
   };
@@ -105,25 +127,38 @@ const CategorySection: React.FC<CategorySectionProps> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Categories</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.horizontalContainer}>
         <AddCategoryButton onPress={() => setModalVisible(true)} />
-        {categories.map((category) => (
-          <CategoryCard key={category.id} category={category} navigation={navigation} />
-        ))}
-      </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          style={styles.scrollView}
+        >
+          {categories.map((category) => (
+            <CategoryCard
+              key={category.id}
+              category={category}
+              navigation={navigation}
+              openMenuId={openMenuId}
+              setOpenMenuId={setOpenMenuId}
+              deleteCategory={deleteCategory}
+              refresh={refresh}
+            />
+          ))}
+        </ScrollView>
+      </View>
 
       <Modal animationType="slide" transparent={true} visible={modalVisible}>
         <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
-          <Pressable style={styles.modalContent} onPress={e => e.stopPropagation()}>
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>New Category</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
                 <Feather name="x" size={24} color="#666" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.modalSubtitle}>
-              Insert category name to create a new category
-            </Text>
+            <Text style={styles.modalSubtitle}>Insert category name to create a new category</Text>
             <TextInput
               placeholder="Category name"
               value={categoryName}
@@ -131,8 +166,8 @@ const CategorySection: React.FC<CategorySectionProps> = ({ navigation }) => {
               style={styles.input}
               placeholderTextColor="#999"
             />
-            <TouchableOpacity 
-              style={[styles.createButton, !categoryName && styles.createButtonDisabled]} 
+            <TouchableOpacity
+              style={[styles.createButton, !categoryName && styles.createButtonDisabled]}
               onPress={handleCreateCategory}
               disabled={!categoryName}
             >
@@ -149,23 +184,30 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 24,
   },
+  horizontalContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  scrollView: {
+    flex: 1, 
+  },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: 20,
     color: "#333333",
   },
   scrollContent: {
     paddingRight: 16,
-    gap: 12,
+    gap: 16,
   },
   categoryCard: {
-    width: 150,
-    height: 100,
-    borderRadius: 16,
-    padding: 16,
+    width: 170,
+    height: 120,
+    borderRadius: 20,
+    padding: 18,
     justifyContent: "space-between",
-    overflow: "hidden"
+    overflow: "hidden",
   },
   categoryHeader: {
     flexDirection: "row",
@@ -173,8 +215,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconContainer: {
-    width: 30,
-    height: 30,
+    width: 34,
+    height: 34,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -188,81 +230,101 @@ const styles = StyleSheet.create({
   categoryTitle: {
     color: "white",
     fontWeight: "600",
-    fontSize: 16,
+    fontSize: 18,
   },
   addButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: "#4A86E8",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 8,
-    marginTop: 20,
+    marginRight: 12,
   },
   decorativeShape: {
-    position: 'absolute',
+    position: "absolute",
     right: -25,
     top: -30,
     width: 90,
     height: 90,
     borderRadius: 50,
-    backgroundColor: '#000000',
-    opacity: 0.5,
+    backgroundColor: "#000000",
+    opacity: 0.2,
     zIndex: -9999,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     minHeight: 300,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   modalSubtitle: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginBottom: 24,
   },
   closeButton: {
     padding: 4,
   },
   input: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     marginBottom: 24,
   },
   createButton: {
-    backgroundColor: '#4A86E8',
+    backgroundColor: "#4A86E8",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   createButtonDisabled: {
-    backgroundColor: '#B4B4B4',
+    backgroundColor: "#B4B4B4",
   },
   createButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  menuContainer: {
+    position: "absolute",
+    top: 40,
+    right: 10,
+    backgroundColor: "transparent",
+    padding: 8,
+    borderRadius: 8,
+    zIndex: 10
+  },
+  deleteButton: {
+    backgroundColor: "#E53935",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 18,
   },
 });
+
 
 export default CategorySection;

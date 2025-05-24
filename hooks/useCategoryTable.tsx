@@ -3,11 +3,14 @@ import * as SQLite from 'expo-sqlite';
 
 const db = SQLite.openDatabaseSync('cardIQ.db');
 
-function getRandomLightColor(): string {
-    const r = Math.floor(200 + Math.random() * 55);
-    const g = Math.floor(200 + Math.random() * 55);
-    const b = Math.floor(200 + Math.random() * 55);
-    return `#${r.toString(16)}${g.toString(16)}${b.toString(16)}`;
+function getRandomColor(): string {
+  const r = Math.floor(100 + Math.random() * 155);
+  const g = Math.floor(100 + Math.random() * 155);
+  const b = Math.floor(100 + Math.random() * 155);
+
+  const toHex = (n: number) => n.toString(16).padStart(2, '0');
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 export function useCategoryTable(user_id: number) {
@@ -20,7 +23,7 @@ export function useCategoryTable(user_id: number) {
           await db.execAsync(
             `CREATE TABLE IF NOT EXISTS category (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
-              name TEXT NOT NULL,
+              name TEXT NOT NULL UNIQUE,
               color TEXT NOT NULL,
               user_id INTEGER NOT NULL,
               FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
@@ -36,13 +39,18 @@ export function useCategoryTable(user_id: number) {
 
   const fetchCategories = () => {
     setLoading(true);
-    db.getAllAsync('SELECT * FROM category WHERE user_id = ?;', [user_id])
+    return db.getAllAsync('SELECT * FROM category WHERE user_id = ?;', [user_id])
       .then(rows => {
         setCategories(rows);
         setLoading(false);
+        return rows;  // Return the data here
       })
-      .catch(err => console.error('Fetch error:', err));
-  };
+      .catch(err => {
+        setLoading(false);
+        console.error('Fetch error:', err);
+        throw err;
+      });
+};
 
   const getSpecificCategory = async (id: number) => {
     try {
@@ -56,7 +64,7 @@ export function useCategoryTable(user_id: number) {
   };
 
   const addCategory = (name: string) => {
-    const color = getRandomLightColor();
+    const color = getRandomColor();
     db.runAsync('INSERT INTO category (name, color, user_id) VALUES (?, ?, ?);', [name, color, user_id])
       .then(() => console.log('Category added'))
       .catch(err => console.error('Error:', err));
