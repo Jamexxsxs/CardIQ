@@ -1,190 +1,182 @@
-import React from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-interface Flashcard {
-  id: string;
-  title: string;
-  cardCount: number;
-  duration: string;
-  progress: number;
-}
-
-const flashcards: Record<string, Flashcard[]> = {
-  "1": [
-    {
-      id: "1",
-      title: "Arithmetic",
-      cardCount: 15,
-      duration: "10min",
-      progress: 25,
-    },
-    {
-      id: "2",
-      title: "Algebra",
-      cardCount: 25,
-      duration: "15min",
-      progress: 50,
-    },
-    {
-      id: "3",
-      title: "Geometry",
-      cardCount: 25,
-      duration: "15min",
-      progress: 50,
-    },
-    {
-      id: "4",
-      title: "Calculus",
-      cardCount: 15,
-      duration: "10min",
-      progress: 25,
-    },
-  ],
-  "2": [
-    {
-      id: "5",
-      title: "Countries",
-      cardCount: 20,
-      duration: "12min",
-      progress: 30,
-    },
-    {
-      id: "6",
-      title: "Capitals",
-      cardCount: 18,
-      duration: "10min",
-      progress: 40,
-    },
-  ],
-  "3": [
-    {
-      id: "7",
-      title: "World War II",
-      cardCount: 30,
-      duration: "20min",
-      progress: 15,
-    },
-    {
-      id: "8",
-      title: "Ancient Egypt",
-      cardCount: 22,
-      duration: "15min",
-      progress: 60,
-    },
-  ],
-  "4": [
-    {
-      id: "9",
-      title: "Mechanics",
-      cardCount: 25,
-      duration: "18min",
-      progress: 35,
-    },
-    {
-      id: "10",
-      title: "Thermodynamics",
-      cardCount: 20,
-      duration: "15min",
-      progress: 45,
-    },
-  ],
-};
-
-// Map of category titles
-const categoryTitles = {
-  "1": "Mathematics",
-  "2": "Geography",
-  "3": "History",
-  "4": "Physics",
-};
+import { useTopicTable } from '../../hooks/useTopicTable';
+import { useCategoryTable } from '../../hooks/useCategoryTable';
+import { AuthContext } from '../../App';
 
 const CategoryContent = ({ route, navigation }) => {
   const { id, title } = route.params;
+  const { userId } = useContext(AuthContext);
+  const { topics, loading, fetchTopicsByCategory } = useTopicTable(userId);
+  const { getSpecificCategory } = useCategoryTable(userId);
   
-  const categoryFlashcards = flashcards[id] || [];
-  const categoryTitle = title || categoryTitles[id] || "Category";
+  const [categoryData, setCategoryData] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredTopics, setFilteredTopics] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      // Fetch topics for this category
+      await fetchTopicsByCategory(parseInt(id));
+      
+      // Get category details (including color)
+      const category = await getSpecificCategory(parseInt(id));
+      setCategoryData(category);
+    };
+
+    loadData();
+  }, [id]);
+
+  useEffect(() => {
+    // Filter topics based on search query
+    if (searchQuery.trim() === '') {
+      setFilteredTopics(topics);
+    } else {
+      const filtered = topics.filter(topic =>
+        topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        topic.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredTopics(filtered);
+    }
+  }, [topics, searchQuery]);
+
+  // Helper function to get time-based sections
+  const getTopicSections = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+
+    const todayTopics = [];
+    const yesterdayTopics = [];
+    const olderTopics = [];
+
+    filteredTopics.forEach(topic => {
+      const activityDate = topic.activity_datetime ? new Date(topic.activity_datetime) : new Date(topic.added_datetime);
+      
+      if (activityDate >= today) {
+        todayTopics.push(topic);
+      } else if (activityDate >= yesterday) {
+        yesterdayTopics.push(topic);
+      } else {
+        olderTopics.push(topic);
+      }
+    });
+
+    return { todayTopics, yesterdayTopics, olderTopics };
+  };
+
+  const { todayTopics, yesterdayTopics, olderTopics } = getTopicSections();
+
+  const renderTopicCard = (topic) => (
+    <TouchableOpacity
+      key={topic.id}
+      style={[
+        styles.flashcardCard,
+        { backgroundColor: categoryData?.color || '#F09E54' }
+      ]}
+      onPress={() => navigation.navigate('FlashcardDetail', { id: topic.id })}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.iconContainer}>
+          <MaterialCommunityIcons name="book-open-page-variant" size={24} style={styles.cardIcon} color="white" />
+        </View>
+        <TouchableOpacity>
+          <Feather name="more-vertical" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.cardTitle}>{topic.title}</Text>
+      <Text style={styles.cardSubtitle} numberOfLines={2}>
+        {topic.description || 'No description available'}
+      </Text>
+      <View style={styles.cardFooter}>
+        <Text style={styles.cardCount}>{topic.card_count} Cards</Text>
+        <Text style={styles.cardDuration}>
+          {Math.ceil(topic.card_count * 0.5)}min
+        </Text>
+      </View>
+      <View style={styles.progressContainer}>
+        <View style={[styles.progressBar, { width: '0%' }]} />
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderSection = (sectionTitle, sectionTopics) => {
+    if (sectionTopics.length === 0) return null;
+
+    return (
+      <View style={styles.section} key={sectionTitle}>
+        <Text style={styles.sectionTitle}>{sectionTitle}</Text>
+        <View style={styles.cardsGrid}>
+          {sectionTopics.map(renderTopicCard)}
+        </View>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text>Loading topics...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{categoryTitle}</Text>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Feather name="arrow-left" size={24} color="#666" />
+        </TouchableOpacity>
+        <Text style={styles.title}>{title || categoryData?.name || "Category"}</Text>
       </View>
 
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-            <Feather name="search" size={20} color="#666" />
+          <Feather name="search" size={20} color="#666" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search..."
+            placeholder="Search topics..."
             placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Feather name="x" size={20} color="#666" />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
       <ScrollView style={styles.content}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today</Text>
-          <View style={styles.cardsGrid}>
-            {categoryFlashcards.slice(0, 2).map((flashcard) => (
-              <TouchableOpacity
-                key={flashcard.id}
-                style={styles.flashcardCard}
-                onPress={() => navigation.navigate('FlashcardDetail', { id: flashcard.id })}
+        {filteredTopics.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {searchQuery ? 'No topics found matching your search.' : 'No topics in this category yet.'}
+            </Text>
+            {!searchQuery && (
+              <TouchableOpacity 
+                style={styles.addTopicButton}
+                onPress={() => navigation.navigate('GeneratePrompt')}
               >
-                <View style={styles.cardHeader}>
-                  <View style={styles.iconContainer}>
-                    <Text style={styles.cardIcon}>√x</Text>
-                  </View>
-                  <TouchableOpacity>
-                    <Feather name="more-vertical" size={20} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.cardTitle}>{flashcard.title}</Text>
-                <Text style={styles.cardSubtitle}>...</Text>
-                <View style={styles.cardFooter}>
-                  <Text style={styles.cardCount}>{flashcard.cardCount} Cards</Text>
-                  <Text style={styles.cardDuration}>{flashcard.duration}</Text>
-                </View>
-                <View style={styles.progressContainer}>
-                  <View style={[styles.progressBar, { width: `${flashcard.progress}%` }]} />
-                </View>
+                <Text style={styles.addTopicButtonText}>Add Your First Topic</Text>
               </TouchableOpacity>
-            ))}
+            )}
           </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Yesterday</Text>
-          <View style={styles.cardsGrid}>
-            {categoryFlashcards.slice(2).map((flashcard) => (
-              <TouchableOpacity
-                key={flashcard.id}
-                style={styles.flashcardCard}
-                onPress={() => navigation.navigate('FlashcardDetail', { id: flashcard.id })}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={styles.iconContainer}>
-                    <Text style={styles.cardIcon}>√x</Text>
-                  </View>
-                  <TouchableOpacity>
-                    <Feather name="more-vertical" size={20} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.cardTitle}>{flashcard.title}</Text>
-                <Text style={styles.cardSubtitle}>...</Text>
-                <View style={styles.cardFooter}>
-                  <Text style={styles.cardCount}>{flashcard.cardCount} Cards</Text>
-                  <Text style={styles.cardDuration}>{flashcard.duration}</Text>
-                </View>
-                <View style={styles.progressContainer}>
-                  <View style={[styles.progressBar, { width: `${flashcard.progress}%` }]} />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+        ) : (
+          <>
+            {renderSection('Today', todayTopics)}
+            {renderSection('Yesterday', yesterdayTopics)}
+            {renderSection('Earlier', olderTopics)}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -196,12 +188,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
   },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F0F2F5",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
+    flex: 1,
   },
   searchContainer: {
     paddingHorizontal: 16,
@@ -241,10 +245,10 @@ const styles = StyleSheet.create({
   },
   flashcardCard: {
     width: '47%',
-    backgroundColor: '#F09E54',
     borderRadius: 16,
     padding: 16,
     minHeight: 160,
+    justifyContent: 'space-between',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -259,20 +263,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardIcon: {
-    color: 'white',
     fontSize: 20,
-    fontWeight: '600',
   },
   cardTitle: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     marginBottom: 4,
   },
   cardSubtitle: {
     color: 'white',
-    opacity: 0.8,
+    opacity: 0.9,
     marginBottom: 12,
+    fontSize: 12,
+    lineHeight: 16,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -283,10 +287,12 @@ const styles = StyleSheet.create({
   cardCount: {
     color: 'white',
     fontSize: 12,
+    fontWeight: '500',
   },
   cardDuration: {
     color: 'white',
     fontSize: 12,
+    fontWeight: '500',
   },
   progressContainer: {
     height: 4,
@@ -297,6 +303,34 @@ const styles = StyleSheet.create({
   progressBar: {
     height: '100%',
     backgroundColor: 'white',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  addTopicButton: {
+    backgroundColor: '#4A86E8',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  addTopicButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

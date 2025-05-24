@@ -18,49 +18,6 @@ export interface FlashcardSet {
   [key: string]: FlashcardItem[]
 }
 
-// Sample flashcard data
-const flashcards: FlashcardSet = {
-  "biology-1": [
-    {
-      id: "b1",
-      question: "What are the characteristics of mammals?",
-      answer:
-        "Mammals are characterized by the presence of hair or fur, mammary glands, three middle ear bones, and a neocortex region in the brain.",
-    },
-    {
-      id: "b2",
-      question: "What is the difference between warm-blooded and cold-blooded animals?",
-      answer:
-        "Warm-blooded animals (endotherms) can maintain a constant body temperature regardless of environmental conditions, while cold-blooded animals (ectotherms) rely on external heat sources to regulate their body temperature.",
-    },
-    {
-      id: "b3",
-      question: "What is the process of photosynthesis?",
-      answer:
-        "Photosynthesis is the process by which green plants and some other organisms use sunlight to synthesize foods with carbon dioxide and water, generating oxygen as a byproduct.",
-    },
-  ],
-  "math-1": [
-    {
-      id: "m1",
-      question: "What is the quadratic formula?",
-      answer: "For a quadratic equation ax² + bx + c = 0, the solutions are given by x = (-b ± √(b² - 4ac)) / 2a",
-    },
-    {
-      id: "m2",
-      question: "What is the Pythagorean theorem?",
-      answer:
-        "In a right triangle, the square of the length of the hypotenuse equals the sum of the squares of the lengths of the other two sides: a² + b² = c²",
-    },
-    {
-      id: "m3",
-      question: "What is a logarithm?",
-      answer:
-        "A logarithm is the power to which a number must be raised to get another number. For example, the logarithm of 100 to the base 10 is 2, because 10² = 100.",
-    },
-  ],
-}
-
 const Flashcard: React.FC = () => {
   const [flashcardModalVisible, setFlashcardModalVisible] = useState(false)
   const navigation = useNavigation()

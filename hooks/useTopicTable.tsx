@@ -8,20 +8,28 @@ export function useTopicTable(user_id: number) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    db.execAsync(
-      `CREATE TABLE IF NOT EXISTS topic (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        card_count INTEGER NOT NULL,
-        added_datetime DATETIME DEFAULT CURRENT_TIMESTAMP,
-        activity_datetime DATETIME,
-        category_id INTEGER NOT NULL,
-        FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE,
-        user_id INTEGER NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
-      );`
-    ).then(() => fetchTopics());
+    const createTable = async () => {
+      try {
+        await db.execAsync(
+          `CREATE TABLE IF NOT EXISTS topic (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            card_count INTEGER NOT NULL,
+            added_datetime DATETIME DEFAULT CURRENT_TIMESTAMP,
+            activity_datetime DATETIME,
+            category_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+          );`
+        );
+      } catch (err) {
+        console.error('Failed to create topic table:', err);
+      }
+    };
+
+    createTable();
   }, []);
 
   const fetchTopics = () => {
@@ -45,10 +53,23 @@ export function useTopicTable(user_id: number) {
     }
   };
 
-  const addTopic = (title: string, description: string, card_count: number, category_id: number) => {
-    db.runAsync('INSERT INTO topic (title, description, card_count, category_id, user_id) VALUES (?, ?, ?, ?, ?);', [title, description, card_count, category_id, user_id])
-      .then(() => console.log('topic added'))
-      .catch(err => console.error('Error:', err));
+  const addTopic = async (
+    title: string,
+    description: string,
+    card_count: number,
+    category_id: number
+  ): Promise<number> => {
+    try {
+      const result = await db.runAsync(
+        'INSERT INTO topic (title, description, card_count, category_id, user_id) VALUES (?, ?, ?, ?, ?);',
+        [title, description, card_count, category_id, user_id]
+      );
+      console.log('Topic added');
+      return result.lastInsertRowId; 
+    } catch (err) {
+      console.error('Error adding topic:', err);
+      throw err;
+    }
   };
 
   const touchTopic = (id: number) => {

@@ -19,6 +19,7 @@ import CategoryContent from "./components/home/CategoryContent";
 import FlashcardDetail from "./components/home/FlashcardDetail";
 import GeneratePrompt from "./components/flashcard/GeneratePrompt"
 import ImportFile from "./components/flashcard/ImportFile"
+import CardFlow from './components/home/CardFlow';
 
 type RootTabParamList = {
   HomeStack: undefined;
@@ -30,6 +31,8 @@ type HomeStackParamList = {
   Home: undefined;
   CategoryContent: { id: string; title: string };
   FlashcardDetail: { id: string };
+  GeneratePrompt: undefined;
+  CardFlow: { topicId: string; topicTitle: string };
 };
 
 type FlashcardStackParamList = {
@@ -55,7 +58,9 @@ function HomeStackScreen() {
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="Home" component={Home} />
       <HomeStack.Screen name="CategoryContent" component={CategoryContent} />
+      <HomeStack.Screen name="GeneratePrompt" component={GeneratePrompt} />
       <HomeStack.Screen name="FlashcardDetail" component={FlashcardDetail} />
+      <HomeStack.Screen name="CardFlow" component={CardFlow} />
     </HomeStack.Navigator>
   );
 }

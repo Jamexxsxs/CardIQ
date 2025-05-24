@@ -1,155 +1,161 @@
-// FlashcardDetail.jsx
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-interface FlashcardDetail {
-  id: string;
-  title: string;
-  category: string;
-  cardCount: number;
-  description: string;
-}
-
-const flashcardDetails: Record<string, FlashcardDetail> = {
-  "1": {
-    id: "1",
-    title: "Arithmetic",
-    category: "MATHEMATICS",
-    cardCount: 15,
-    description: "Arithmetic is a branch of mathematics that consists of the study of numbers, especially the properties of the traditional operations on them—addition, subtraction, multiplication, division, exponentiation, and extraction of roots.",
-  },
-  "2": {
-    id: "2",
-    title: "Algebra",
-    category: "MATHEMATICS",
-    cardCount: 25,
-    description: "Algebra is a branch of mathematics that deals with symbols and the rules for manipulating them.",
-  },
-  "3": {
-    id: "3",
-    title: "Geometry",
-    category: "MATHEMATICS",
-    cardCount: 25,
-    description: "Geometry is a branch of mathematics that studies the sizes, shapes, positions, and dimensions of things.",
-  },
-  "4": {
-    id: "4",
-    title: "Calculus",
-    category: "MATHEMATICS",
-    cardCount: 15,
-    description: "Calculus is the mathematical study of continuous change, in the same way that geometry is the study of shape and algebra is the study of generalizations of arithmetic operations.",
-  },
-  "5": {
-    id: "5",
-    title: "Countries",
-    category: "GEOGRAPHY",
-    cardCount: 20,
-    description: "Learn about different countries around the world, their locations, capitals, and key facts.",
-  },
-  "6": {
-    id: "6",
-    title: "Capitals",
-    category: "GEOGRAPHY",
-    cardCount: 18,
-    description: "Study the capital cities of countries around the world.",
-  },
-  "7": {
-    id: "7",
-    title: "World War II",
-    category: "HISTORY",
-    cardCount: 30,
-    description: "Learn about the major events, figures, and impacts of World War II (1939-1945).",
-  },
-  "8": {
-    id: "8",
-    title: "Ancient Egypt",
-    category: "HISTORY",
-    cardCount: 22,
-    description: "Explore the civilization, culture, and achievements of Ancient Egypt.",
-  },
-  "9": {
-    id: "9",
-    title: "Mechanics",
-    category: "PHYSICS",
-    cardCount: 25,
-    description: "Study the branch of physics concerned with the motion of objects and their response to forces.",
-  },
-  "10": {
-    id: "10",
-    title: "Thermodynamics",
-    category: "PHYSICS",
-    cardCount: 20,
-    description: "Learn about the branch of physics that deals with heat, work, and temperature, and their relation to energy and entropy.",
-  },
-};
-
-// Related flashcards mapping
-const relatedFlashcards = {
-  "1": ["3", "2"], // Arithmetic related to Geometry and Algebra
-  "2": ["1", "3"], // Algebra related to Arithmetic and Geometry
-  "3": ["2", "1"], // Geometry related to Algebra and Arithmetic
-  "4": ["2", "3"], // Calculus related to Algebra and Geometry
-  "5": ["6"], // Countries related to Capitals
-  "6": ["5"], // Capitals related to Countries
-  "7": ["8"], // World War II related to Ancient Egypt (for simplicity)
-  "8": ["7"], // Ancient Egypt related to World War II (for simplicity)
-  "9": ["10"], // Mechanics related to Thermodynamics
-  "10": ["9"], // Thermodynamics related to Mechanics
-};
+import { useTopicTable } from '../../hooks/useTopicTable';
+import { useCategoryTable } from '../../hooks/useCategoryTable';
+import { AuthContext } from '../../App';
 
 const FlashcardDetail = ({ route, navigation }) => {
   const { id } = route.params;
+  const { userId } = useContext(AuthContext);
+  const { getSpecificTopic, fetchTopicsByCategory, topics } = useTopicTable(userId);
+  const { getSpecificCategory } = useCategoryTable(userId);
   
-  const flashcard = flashcardDetails[id];
-  const related = relatedFlashcards[id] || [];
+  const [topic, setTopic] = useState(null);
+  const [category, setCategory] = useState(null);
+  const [relatedTopics, setRelatedTopics] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!flashcard) {
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Get the specific topic
+        const topicData = await getSpecificTopic(parseInt(id));
+        setTopic(topicData);
+
+        if (topicData) {
+          // Get category details
+          const categoryData = await getSpecificCategory(topicData.category_id);
+          setCategory(categoryData);
+
+          // Get related topics from the same category
+          await fetchTopicsByCategory(topicData.category_id);
+        }
+      } catch (error) {
+        console.error('Error loading topic data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [id]);
+
+  useEffect(() => {
+    // Filter out the current topic from related topics
+    if (topics && topic) {
+      const related = topics.filter(t => t.id !== topic.id).slice(0, 2);
+      setRelatedTopics(related);
+    }
+  }, [topics, topic]);
+
+  if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.errorText}>Flashcard not found</Text>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!topic) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Topic not found</Text>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Feather name="arrow-left" size={24} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuButton}>
-          <Feather name="more-vertical" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Header Section with colored background */}
+        <View style={[styles.headerSection, { backgroundColor: category?.color || '#F09E54' }]}>
+          {/* Decorative circle */}
+          <View style={styles.decorativeCircle} />
+          
+          {/* Header controls */}
+          <View style={styles.headerControls}>
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()} 
+              style={styles.backButtonCircle}
+            >
+              <Feather name="arrow-left" size={20} color="#666" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuButton}>
+              <Feather name="more-vertical" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
 
-      <View style={styles.content}>
-        <Text style={styles.title}>{flashcard.title}</Text>
-        <Text style={styles.category}>{flashcard.cardCount} Cards · {flashcard.category}</Text>
-        <Text style={styles.description}>{flashcard.description}</Text>
-
-        <View style={styles.relatedSection}>
-          <Text style={styles.relatedTitle}>Related</Text>
-          <View style={styles.relatedCards}>
-            {related.map(relatedId => (
-              <TouchableOpacity 
-                key={relatedId}
-                style={styles.relatedCard}
-                onPress={() => navigation.replace('FlashcardDetail', { id: relatedId })}
-              >
-                <Text style={styles.relatedCardTitle}>
-                  {flashcardDetails[relatedId]?.title || "Related Card"}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          {/* Title */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>{topic.title}</Text>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.startButton}>
-          <Text style={styles.startButtonText}>START</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Content Section */}
+        <View style={styles.contentSection}>
+          <Text style={styles.subtitle}>
+            {topic.card_count} Cards • {category?.name?.toUpperCase() || 'CATEGORY'}
+          </Text>
+          
+          <Text style={styles.description}>
+            {topic.description || 'No description available for this topic.'}
+          </Text>
+
+          <TouchableOpacity 
+            style={styles.startButton}
+            onPress={() => navigation.navigate('CardFlow', { 
+              topicId: topic.id, 
+              topicTitle: topic.title,
+              categoryId: topic.category_id 
+            })}
+          >
+            <Text style={styles.startButtonText}>START</Text>
+          </TouchableOpacity>
+
+          {/* Related Section */}
+          {relatedTopics.length > 0 && (
+            <View style={styles.relatedSection}>
+              <Text style={styles.relatedTitle}>Related</Text>
+              <View style={styles.relatedCards}>
+                {relatedTopics.map((relatedTopic) => (
+                  <TouchableOpacity 
+                    key={relatedTopic.id}
+                    style={[
+                      styles.relatedCard,
+                      { backgroundColor: category?.color || '#F09E54' }
+                    ]}
+                    onPress={() => navigation.replace('FlashcardDetail', { id: relatedTopic.id.toString() })}
+                  >
+                    {/* Decorative circle for related cards */}
+                    <View style={styles.relatedCardCircle} />
+                    
+                    {/* Menu button */}
+                    <TouchableOpacity style={styles.relatedCardMenu}>
+                      <Feather name="more-vertical" size={16} color="#fff" />
+                    </TouchableOpacity>
+                    
+                    <Text style={styles.relatedCardTitle}>
+                      {relatedTopic.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -157,16 +163,40 @@ const FlashcardDetail = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F09E54',
+    backgroundColor: '#fff',
   },
-  header: {
+  scrollView: {
+    flex: 1,
+  },
+  headerSection: {
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingTop: 16,
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  decorativeCircle: {
+    position: 'absolute',
+    top: -30,
+    right: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+  },
+  headerControls: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 16,
+    alignItems: 'center',
+    marginBottom: 40,
   },
-  backButton: {
+  backButtonCircle: {
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -176,36 +206,52 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
+  titleContainer: {
+    marginBottom: 20,
   },
   title: {
-    fontSize: 40,
+    fontSize: 36,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 8,
+    lineHeight: 42,
   },
-  category: {
+  contentSection: {
+    padding: 20,
+    flex: 1,
+  },
+  subtitle: {
     fontSize: 16,
-    color: '#fff',
-    opacity: 0.8,
-    marginBottom: 24,
+    color: '#666',
+    marginBottom: 20,
+    fontWeight: '500',
   },
   description: {
     fontSize: 16,
-    color: '#fff',
+    color: '#333',
     lineHeight: 24,
     marginBottom: 40,
   },
+  startButton: {
+    backgroundColor: '#5B9BD5',
+    borderRadius: 16,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  startButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
   relatedSection: {
-    marginTop: 'auto',
-    marginBottom: 24,
+    marginTop: 20,
   },
   relatedTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '600',
-    color: '#fff',
+    color: '#999',
     marginBottom: 16,
   },
   relatedCards: {
@@ -213,36 +259,68 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   relatedCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    width: 120,
-    height: 80,
+    width: 140,
+    height: 100,
+    borderRadius: 16,
+    padding: 12,
+    position: 'relative',
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  relatedCardCircle: {
+    position: 'absolute',
+    top: -15,
+    right: -15,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+  },
+  relatedCardMenu: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   relatedCardTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#F09E54',
+    color: '#fff',
   },
-  startButton: {
-    backgroundColor: '#578FCA',
-    borderRadius: 12,
-    height: 56,
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
   },
-  startButtonText: {
-    color: '#fff',
+  loadingText: {
     fontSize: 16,
-    fontWeight: '600',
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   errorText: {
     fontSize: 18,
-    color: '#fff',
+    color: '#666',
     textAlign: 'center',
-    marginTop: 20,
+    marginBottom: 20,
+  },
+  backButton: {
+    backgroundColor: '#5B9BD5',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
