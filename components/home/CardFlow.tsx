@@ -8,7 +8,10 @@ import {
   SafeAreaView,
   Alert,
   Dimensions,
-  Animated 
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
 } from 'react-native';
 import { Feather, AntDesign } from '@expo/vector-icons';
 import { useCardTable } from '../../hooks/useCardTable';
@@ -199,122 +202,133 @@ const CardFlow = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Feather name="arrow-left" size={20} color="#666" />
-        </TouchableOpacity>
-      </View>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Feather name="arrow-left" size={20} color="#666" />
+            </TouchableOpacity>
+          </View>
 
-      {/* Title */}
-      <Text style={styles.title}>{topicTitle}</Text>
+          {/* Title */}
+          <Text style={styles.title}>{topicTitle}</Text>
 
-      {/* Progress Section */}
-      <View style={styles.progressSection}>
-        <Text style={styles.progressLabel}>Your Progress</Text>
-        <View style={styles.progressInfo}>
-          <Text style={[styles.progressText, { color: categoryColor }]}>
-            {currentCardIndex + 1} out of {totalCards} Cards
-          </Text>
-          <Text style={styles.timeText}>{getEstimatedTime()}</Text>
-        </View>
-        {renderProgressBar()}
-      </View>
+          {/* Progress Section */}
+          <View style={styles.progressSection}>
+            <Text style={styles.progressLabel}>Your Progress</Text>
+            <View style={styles.progressInfo}>
+              <Text style={[styles.progressText, { color: categoryColor }]}>
+                {currentCardIndex + 1} out of {totalCards} Cards
+              </Text>
+              <Text style={styles.timeText}>{getEstimatedTime()}</Text>
+            </View>
+            {renderProgressBar()}
+          </View>
 
-      {/* Flashcard with flip animation */}
-      <View style={styles.cardContainer}>
-        <TouchableOpacity 
-          style={styles.cardTouchable}
-          onPress={flipCard}
-          disabled={isFlipping}
-        >
-          {/* Front side (Question) */}
-          <Animated.View 
-            style={[
-              cardFrontStyles,
-              { transform: [{ rotateY: frontInterpolate }] }
-            ]}
-          >
-            <Text style={styles.questionText}>
-              {currentCard.question}
-            </Text>
-            <Text style={styles.tapHint}>Tap to reveal answer</Text>
-          </Animated.View>
+          {/* Flashcard with flip animation */}
+          <View style={styles.cardContainer}>
+            <TouchableOpacity 
+              style={styles.cardTouchable}
+              onPress={flipCard}
+              disabled={isFlipping}
+            >
+              {/* Front side (Question) */}
+              <Animated.View 
+                style={[
+                  cardFrontStyles,
+                  { transform: [{ rotateY: frontInterpolate }] }
+                ]}
+              >
+                <Text style={styles.questionText}>
+                  {currentCard.question}
+                </Text>
+                <Text style={styles.tapHint}>Tap to reveal answer</Text>
+              </Animated.View>
 
-          {/* Back side (Answer) */}
-          <Animated.View 
-            style={[
-              cardBackStyles,
-              { 
-                transform: [{ rotateY: backInterpolate }],
-              }
-            ]}
-          >
-            <Text style={styles.answerText}>
-              {currentCard.answer}
-            </Text>
-            <Text style={styles.tapHint}>Tap to show question</Text>
-          </Animated.View>
-        </TouchableOpacity>
-      </View>
+              {/* Back side (Answer) */}
+              <Animated.View 
+                style={[
+                  cardBackStyles,
+                  { 
+                    transform: [{ rotateY: backInterpolate }],
+                  }
+                ]}
+              >
+                <Text style={styles.answerText}>
+                  {currentCard.answer}
+                </Text>
+                <Text style={styles.tapHint}>Tap to show question</Text>
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
 
-      {/* Input Section */}
-      <View style={styles.inputSection}>
-        <TextInput
-          style={styles.answerInput}
-          placeholder="Type your answer..."
-          placeholderTextColor="#999"
-          value={userAnswer}
-          onChangeText={setUserAnswer}
-        />
-        
-        <TouchableOpacity 
-          style={styles.revealButton}
-          onPress={flipCard}
-        >
-          <AntDesign 
-            name="heart" 
-            size={20} 
-            color={showAnswer ? categoryColor : '#999'} 
-          />
-          <Text style={[
-            styles.revealText, 
-            { color: showAnswer ? categoryColor : '#999' }
-          ]}>
-            {showAnswer ? 'Show Question' : 'Reveal'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {/* Input Section */}
+          <View style={styles.inputSection}>
+            <TextInput
+              style={styles.answerInput}
+              placeholder="Type your answer..."
+              placeholderTextColor="#999"
+              value={userAnswer}
+              onChangeText={setUserAnswer}
+            />
+            
+            <TouchableOpacity 
+              style={styles.revealButton}
+              onPress={flipCard}
+            >
+              <AntDesign 
+                name="heart" 
+                size={20} 
+                color={showAnswer ? categoryColor : '#999'} 
+              />
+              <Text style={[
+                styles.revealText, 
+                { color: showAnswer ? categoryColor : '#999' }
+              ]}>
+                {showAnswer ? 'Show Question' : 'Reveal'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-      {/* Navigation Buttons */}
-      <View style={styles.navigationButtons}>
-        <TouchableOpacity 
-          style={[
-            styles.navButton, 
-            styles.prevButton,
-            { opacity: currentCardIndex === 0 ? 0.5 : 1 }
-          ]}
-          onPress={handlePrevious}
-          disabled={currentCardIndex === 0}
-        >
-          <Feather name="arrow-left" size={20} color="#fff" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.navButton, styles.nextButton]}
-          onPress={handleNext}
-        >
-          <Text style={styles.nextButtonText}>
-            {currentCardIndex === totalCards - 1 ? 'Finish' : 'Next'}
-          </Text>
-          {currentCardIndex < totalCards - 1 && (
-            <Feather name="arrow-right" size={20} color="#fff" />
-          )}
-        </TouchableOpacity>
-      </View>
+          {/* Navigation Buttons */}
+          <View style={styles.navigationButtons}>
+            <TouchableOpacity 
+              style={[
+                styles.navButton, 
+                styles.prevButton,
+                { opacity: currentCardIndex === 0 ? 0.5 : 1 }
+              ]}
+              onPress={handlePrevious}
+              disabled={currentCardIndex === 0}
+            >
+              <Feather name="arrow-left" size={20} color="#fff" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.navButton, styles.nextButton]}
+              onPress={handleNext}
+            >
+              <Text style={styles.nextButtonText}>
+                {currentCardIndex === totalCards - 1 ? 'Finish' : 'Next'}
+              </Text>
+              {currentCardIndex < totalCards - 1 && (
+                <Feather name="arrow-right" size={20} color="#fff" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -323,6 +337,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   header: {
     paddingHorizontal: 20,
@@ -335,14 +355,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 15,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#333',
     paddingHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 30,
+    marginTop: 10,
+    marginBottom: 25,
   },
   progressSection: {
     paddingHorizontal: 20,
@@ -381,9 +402,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   cardContainer: {
+    height: 300,
     flex: 1,
     paddingHorizontal: 20,
-    justifyContent: 'center',
+    marginTop: -30
   },
   cardTouchable: {
     height: 250,
@@ -412,7 +434,7 @@ const styles = StyleSheet.create({
   },
   inputSection: {
     paddingHorizontal: 20,
-    marginBottom: 30,
+    marginTop: -40
   },
   answerInput: {
     backgroundColor: '#F8F8F8',
@@ -431,6 +453,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     gap: 8,
+    marginTop: -10,
+    marginBottom: 8
   },
   revealText: {
     fontSize: 16,
@@ -439,7 +463,7 @@ const styles = StyleSheet.create({
   navigationButtons: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingBottom: 30,
+    paddingBottom: 10,
     gap: 12,
   },
   navButton: {
