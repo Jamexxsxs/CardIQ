@@ -66,7 +66,7 @@ export function useCardTable(user_id: number) {
     prompt: string,
     category_id: number,
     count: number = 5
-  ): Promise<{ title: string; description: string } | null> => {
+  ): Promise<{ topic_id: any, title: string; description: string } | null> => {
     setLoading(true);
     setError(null);
 
@@ -124,7 +124,7 @@ export function useCardTable(user_id: number) {
 
       fetchCardsByTopic(topic_id);
 
-      return { title, description };
+      return { topic_id, title, description };
     } catch (err) {
       console.error("AI card generation error:", err);
       setError("Failed to generate cards from prompt.");

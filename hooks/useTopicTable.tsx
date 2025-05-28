@@ -32,14 +32,18 @@ export function useTopicTable(user_id: number) {
     createTable();
   }, []);
 
-  const fetchTopics = () => {
+  const fetchTopics = async () => {
     setLoading(true);
-    db.getAllAsync('SELECT * FROM topic WHERE user_id = ?;', [user_id])
-      .then(rows => {
-        setTopics(rows);
-        setLoading(false);
-      })
-      .catch(err => console.error('Fetch error:', err));
+    try {
+      const rows = await db.getAllAsync('SELECT * FROM topic WHERE user_id = ?;', [user_id]);
+      setTopics(rows);
+      return rows;  // <-- Return the fetched data here
+    } catch (err) {
+      console.error('Fetch error:', err);
+      return [];
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getSpecificTopic = async (id: number) => {
@@ -106,12 +110,13 @@ export function useTopicTable(user_id: number) {
         `SELECT 
            topic.category_id,
            category.name AS category_name,
+           category.color,
            topic.title,
            topic.card_count,
            topic.activity_datetime
          FROM topic
          INNER JOIN category ON topic.category_id = category.id
-         WHERE topic.activity_datetime IS NOT NULL AND topic.user_id = ?
+         WHERE topic.user_id = ?
          ORDER BY topic.activity_datetime DESC
          LIMIT ?;`,
         [user_id, limit]

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTopicTable } from '../../hooks/useTopicTable';
 import { useCategoryTable } from '../../hooks/useCategoryTable';
 import { AuthContext } from '../../App';
+import { useIsFocused } from '@react-navigation/native';
 
 const CategoryContent = ({ route, navigation }) => {
   const { id, title } = route.params;
@@ -15,6 +16,7 @@ const CategoryContent = ({ route, navigation }) => {
   const [categoryData, setCategoryData] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredTopics, setFilteredTopics] = useState([]);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     const loadData = async () => {
@@ -28,6 +30,18 @@ const CategoryContent = ({ route, navigation }) => {
 
     loadData();
   }, [id]);
+
+  useEffect(() => {
+    const refreshData = async () => {
+      await fetchTopicsByCategory(parseInt(id));
+      const category = await getSpecificCategory(parseInt(id));
+      setCategoryData(category);
+    };
+
+    if (isFocused) {
+      refreshData();
+    }
+  }, [isFocused, id]);
 
   useEffect(() => {
     // Filter topics based on search query
@@ -164,7 +178,7 @@ const CategoryContent = ({ route, navigation }) => {
             {!searchQuery && (
               <TouchableOpacity 
                 style={styles.addTopicButton}
-                onPress={() => navigation.navigate('GeneratePrompt')}
+                onPress={() => navigation.navigate('Flashcard')}
               >
                 <Text style={styles.addTopicButtonText}>Add Your First Topic</Text>
               </TouchableOpacity>

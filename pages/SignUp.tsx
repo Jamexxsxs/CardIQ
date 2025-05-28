@@ -11,6 +11,7 @@ type AuthStackParamList = {
   Welcome: undefined;
   Login: undefined;
   SignUp: undefined;
+  Onboarding: { userId: number };
 };
 
 type SignUpScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'SignUp'>;
@@ -36,7 +37,8 @@ const SignUp = () => {
       const userId = await addUser(name, email, password);
       console.log(userId)
       if (userId) {
-        login(userId, rememberMe); 
+        // login(userId, rememberMe); 
+        navigation.navigate('Onboarding', { userId });
       }
     } catch (error) {
       console.error('Sign up failed:', error);
@@ -111,11 +113,6 @@ const SignUp = () => {
             <Text style={styles.rememberMeText}>Remember me</Text>
           </TouchableOpacity>
           
-          <Text style={styles.termsText}>
-            By signing up you accept the{' '}
-            <Text style={styles.termsLink}>Terms of service</Text> and{' '}
-            <Text style={styles.termsLink}>Privacy Policy</Text>
-          </Text>
           
           <TouchableOpacity style={styles.signupButton} onPress={handleSignUp}>
             <Text style={styles.signupButtonText}>Sign up</Text>
