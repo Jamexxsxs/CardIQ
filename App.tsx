@@ -15,6 +15,7 @@ import Flashcard from "./pages/Flashcard";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
+import Onboarding from "./pages/Onboarding";
 import CategoryContent from "./components/home/CategoryContent";
 import FlashcardDetail from "./components/home/FlashcardDetail";
 import GeneratePrompt from "./components/flashcard/GeneratePrompt"
@@ -30,7 +31,8 @@ type RootTabParamList = {
 type HomeStackParamList = {
   Home: undefined;
   CategoryContent: { id: string; title: string };
-  FlashcardDetail: { id: string };
+  FlashcardDetail: { id: any };
+  Flashcard: undefined;
   GeneratePrompt: undefined;
   CardFlow: { topicId: string; topicTitle: string };
 };
@@ -38,12 +40,14 @@ type HomeStackParamList = {
 type FlashcardStackParamList = {
   Flashcard: undefined
   GeneratePrompt: undefined
+  FlashcardDetail: { id: any };
   ImportFile: undefined
 }
 
 type AuthStackParamList = {
   Login: undefined;
   SignUp: undefined;
+  Onboarding: { userId: number };
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -58,6 +62,7 @@ function HomeStackScreen() {
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="Home" component={Home} />
       <HomeStack.Screen name="CategoryContent" component={CategoryContent} />
+      <HomeStack.Screen name="Flashcard" component={Flashcard} />
       <HomeStack.Screen name="GeneratePrompt" component={GeneratePrompt} />
       <HomeStack.Screen name="FlashcardDetail" component={FlashcardDetail} />
       <HomeStack.Screen name="CardFlow" component={CardFlow} />
@@ -71,6 +76,7 @@ function FlashcardStackScreen() {
     <FlashcardStack.Navigator screenOptions={{ headerShown: false }}>
       <FlashcardStack.Screen name="Flashcard" component={Flashcard} />
       <FlashcardStack.Screen name="GeneratePrompt" component={GeneratePrompt} />
+      <FlashcardStack.Screen name="FlashcardDetail" component={FlashcardDetail} />
       <FlashcardStack.Screen name="ImportFile" component={ImportFile} />
     </FlashcardStack.Navigator>
   )
@@ -82,8 +88,20 @@ function AuthStackScreen() {
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
       <AuthStack.Screen name="Login" component={Login} />
       <AuthStack.Screen name="SignUp" component={SignUp} />
+      <AuthStack.Screen name="Onboarding" component={OnboardingScreen} />
     </AuthStack.Navigator>
   );
+}
+
+// Onboarding screen wrapper
+function OnboardingScreen({ route }: { route: { params: { userId: number } } }) {
+  const { login } = useContext(AuthContext);
+  
+  const handleOnboardingComplete = async () => {
+    await login(route.params.userId, true);
+  };
+
+  return <Onboarding onComplete={handleOnboardingComplete} />;
 }
 
 // Main tab navigator
@@ -144,6 +162,7 @@ interface AuthContextType {
   userId: number | null;
   login: (userId: number, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
+  navigateToOnboarding: (userId: number) => void;
 }
 
 export const AuthContext = React.createContext<AuthContextType>({
@@ -151,11 +170,13 @@ export const AuthContext = React.createContext<AuthContextType>({
   userId: null,
   login: async () => {},
   logout: async () => {},
+  navigateToOnboarding: () => {},
 });
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
+  const [navigationRef, setNavigationRef] = useState<any>(null);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -188,13 +209,18 @@ export default function App() {
       setIsLoggedIn(false);
       await AsyncStorage.removeItem('userId');
     },
+    navigateToOnboarding: (id: number) => {
+      if (navigationRef) {
+        navigationRef.navigate('Onboarding', { userId: id });
+      }
+    },
   };
 
   return (
     <SafeAreaProvider>
       <StatusBar style="auto" />
       <AuthContext.Provider value={authContext}>
-        <NavigationContainer>
+        <NavigationContainer ref={setNavigationRef}>
           <RootStack.Navigator screenOptions={{ headerShown: false }}>
             {isLoggedIn ? (
               <RootStack.Screen name="Main" component={MainTabNavigator} />

@@ -9,7 +9,7 @@ import { AuthContext } from '../../App';
 const FlashcardDetail = ({ route, navigation }) => {
   const { id } = route.params;
   const { userId } = useContext(AuthContext);
-  const { getSpecificTopic, fetchTopicsByCategory, topics } = useTopicTable(userId);
+  const { getSpecificTopic, fetchTopicsByCategory, topics, touchTopic } = useTopicTable(userId);
   const { getSpecificCategory } = useCategoryTable(userId);
   
   const [topic, setTopic] = useState(null);
@@ -115,11 +115,18 @@ const FlashcardDetail = ({ route, navigation }) => {
 
           <TouchableOpacity 
             style={styles.startButton}
-            onPress={() => navigation.navigate('CardFlow', { 
-              topicId: topic.id, 
-              topicTitle: topic.title,
-              categoryId: topic.category_id 
-            })}
+            onPress={async () => {
+              try {
+                const updatedTopics = await touchTopic(id);
+                navigation.navigate('CardFlow', { 
+                  topicId: topic.id, 
+                  topicTitle: topic.title,
+                  categoryId: topic.category_id 
+                });
+              } catch (error) {
+                console.error('Error updating topic:', error);
+              }
+            }}
           >
             <Text style={styles.startButtonText}>START</Text>
           </TouchableOpacity>

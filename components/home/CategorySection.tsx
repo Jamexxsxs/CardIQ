@@ -129,24 +129,30 @@ const CategorySection: React.FC<{ navigation: any }> = ({ navigation }) => {
       <Text style={styles.sectionTitle}>Categories</Text>
       <View style={styles.horizontalContainer}>
         <AddCategoryButton onPress={() => setModalVisible(true)} />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          style={styles.scrollView}
-        >
-          {categories.map((category) => (
-            <CategoryCard
-              key={category.id}
-              category={category}
-              navigation={navigation}
-              openMenuId={openMenuId}
-              setOpenMenuId={setOpenMenuId}
-              deleteCategory={deleteCategory}
-              refresh={refresh}
-            />
-          ))}
-        </ScrollView>
+        {categories.length === 0 ? (
+          <View style={styles.noCategoryContainer}>
+            <Text style={styles.noCategoryText}>No Categories Yet</Text>
+          </View>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            style={styles.scrollView}
+          >
+            {[...categories].reverse().map((category) => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+                navigation={navigation}
+                openMenuId={openMenuId}
+                setOpenMenuId={setOpenMenuId}
+                deleteCategory={deleteCategory}
+                refresh={refresh}
+              />
+            ))}
+          </ScrollView>
+        )}
       </View>
 
       <Modal animationType="slide" transparent={true} visible={modalVisible}>
@@ -183,6 +189,18 @@ const CategorySection: React.FC<{ navigation: any }> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     marginBottom: 24,
+  },
+  noCategoryContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: 120,
+    paddingLeft: 16,
+  },
+  noCategoryText: {
+    color: "#999",
+    fontSize: 16,
+    fontStyle: "italic",
   },
   horizontalContainer: {
     flexDirection: "row",
