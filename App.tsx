@@ -43,6 +43,7 @@ type FlashcardStackParamList = {
   Flashcard: undefined
   GeneratePrompt: undefined
   FlashcardDetail: { id: any };
+  CardFlow: { topicId: string; topicTitle: string };
   ImportFile: undefined
 }
 
@@ -79,6 +80,7 @@ function FlashcardStackScreen() {
     <FlashcardStack.Navigator screenOptions={{ headerShown: false }}>
       <FlashcardStack.Screen name="Flashcard" component={Flashcard} />
       <FlashcardStack.Screen name="GeneratePrompt" component={GeneratePrompt} />
+      <FlashcardStack.Screen name="CardFlow" component={CardFlow} />
       <FlashcardStack.Screen name="FlashcardDetail" component={FlashcardDetail} />
       <FlashcardStack.Screen name="ImportFile" component={ImportFile} />
     </FlashcardStack.Navigator>

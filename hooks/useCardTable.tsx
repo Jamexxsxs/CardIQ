@@ -134,6 +134,81 @@ export function useCardTable(user_id: number) {
     }
   };
 
+  const generateCardsFromPDF = async (
+    pdfText: string,
+    category_id: number,
+    count = 5,
+  ): Promise<{ topic_id: any; title: string; description: string } | null> => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+        {
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are an assistant that generates educational flashcards in JSON format from PDF text.
+Extract the main concepts from this text and generate a title and a short description for the topic.
+Then generate ${count} flashcards based on the key concepts with these specific requirements:
+1. Each question should be longer than its corresponding answer
+2. Answers must be very concise (maximum 5 words)
+3. Questions should be complete sentences
+4. Respond with ONLY the JSON object, without any additional text or markdown
+5. The response must start with exactly "{" 
+
+Here is the PDF text:
+${pdfText}
+
+Respond with a JSON object like:
+{
+  "title": "Your title here",
+  "description": "A brief description here.",
+  "flashcards": [
+    {"question": "A longer question...", "answer": "short answer"},
+    ...
+  ]
+}`,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      )
+
+      let textResponse = response.data.candidates[0].content.parts[0].text
+      textResponse = textResponse.replace(/```json|```/g, "").trim()
+      const parsed = JSON.parse(textResponse)
+
+      const { title, description, flashcards } = parsed
+
+      const topic_id = await addTopic(title, description, flashcards.length, category_id)
+      console.log(`✅ Topic created from PDF (ID: ${topic_id}):`, { title, description })
+
+      flashcards.forEach((card: { question: string; answer: string }, index: number) => {
+        addCard(card.question, card.answer, index + 1, topic_id)
+        console.log(`📘 Card ${index + 1}:`, card)
+      })
+
+      fetchCardsByTopic(topic_id)
+
+      return { topic_id, title, description }
+    } catch (err) {
+      console.error("AI card generation from PDF error:", err)
+      setError("Failed to generate cards from PDF.")
+      return null
+    } finally {
+      setLoading(false)
+    }
+  };
+
   const fetchCardsByTopic = (topicId: number) => {
     setLoading(true);
     db.getAllAsync('SELECT * FROM card WHERE topic_id = ?;', [topicId])
@@ -150,6 +225,7 @@ export function useCardTable(user_id: number) {
     getSpecificCard,
     addCard,
     generateCardsFromPrompt,
+    generateCardsFromPDF,
     fetchCardsByTopic,
     refresh: fetchCards,
   };

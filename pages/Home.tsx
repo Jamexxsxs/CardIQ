@@ -30,7 +30,7 @@ const Home = ({ navigation }) => {
       >
         <Header username="Yushi" />
         <CategorySection navigation={navigation} />
-        <RecentActivitySection />
+        <RecentActivitySection refreshKey={refreshKey}/>
       </ScrollView>
     </SafeAreaView>
   )

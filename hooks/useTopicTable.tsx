@@ -107,7 +107,8 @@ export function useTopicTable(user_id: number) {
   const getRecentActivity = async (limit: number = 5) => {
     try {
       const rows = await db.getAllAsync(
-        `SELECT 
+        `SELECT
+           topic.id, 
            topic.category_id,
            category.name AS category_name,
            category.color,
