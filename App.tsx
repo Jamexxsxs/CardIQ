@@ -21,6 +21,7 @@ import FlashcardDetail from "./components/home/FlashcardDetail";
 import GeneratePrompt from "./components/flashcard/GeneratePrompt"
 import ImportFile from "./components/flashcard/ImportFile"
 import CardFlow from './components/home/CardFlow';
+import CompleteCard from './components/home/CompleteCard';
 
 type RootTabParamList = {
   HomeStack: undefined;
@@ -35,6 +36,7 @@ type HomeStackParamList = {
   Flashcard: undefined;
   GeneratePrompt: undefined;
   CardFlow: { topicId: string; topicTitle: string };
+  CompleteCard: {topicId: string; topicTitle: string};
 };
 
 type FlashcardStackParamList = {
@@ -66,6 +68,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="GeneratePrompt" component={GeneratePrompt} />
       <HomeStack.Screen name="FlashcardDetail" component={FlashcardDetail} />
       <HomeStack.Screen name="CardFlow" component={CardFlow} />
+      <HomeStack.Screen name="CompleteCard" component={CompleteCard} />
     </HomeStack.Navigator>
   );
 }
