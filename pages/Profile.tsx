@@ -36,7 +36,8 @@ const recentlyAdded = [
 
 const Profile = () => {
   const { logout } = useContext(AuthContext);
-
+  const { currentUser } = useContext(AuthContext);
+  
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
@@ -60,13 +61,11 @@ const Profile = () => {
         <View style={styles.profileHeader}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={{
-                uri: "https://images.pexels.com/photos/19003599/pexels-photo-19003599/free-photo-of-the-cardiq-logo-with-a-cute-brain-and-flashcards.png",
-              }}
+              source={require("../assets/logo.png")}
               style={styles.profileImage}
             />
           </View>
-          <Text style={styles.username}>Yushi Coquilla</Text>
+          <Text style={styles.username}>{currentUser?.username || "User"}</Text>
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => {

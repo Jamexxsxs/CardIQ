@@ -14,21 +14,22 @@ const onboardingData = [
     id: 1,
     title: "Create Flashcards",
     description: "Build your own study materials with\ncustom flashcards",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/First%20login%20screen-4cTSODKjINnVjGpaMGWYZ87ofTiF0I.png"
+    image: require("../assets/first.png"),
   },
   {
     id: 2,
     title: "Type It. Flip It. Nail It.",
     description: "Create custom sets, study efficiently,\nand level up your learning.",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/First%20login%20screen%20%281%29-Ty9yH91Yc2sQtNzx7vjfWMcUfAepvE.png"
+    image: require("../assets/second.png"),
   },
   {
     id: 3,
     title: "Get Results",
     description: "Track your progress and achievements",
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/First%20login%20screen%20%282%29-JI7wfBBeSrv6JjpM3d8nzxRb0V7gmw.png"
-  }
+    image: require("../assets/third.png"),
+  },
 ];
+
 
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -60,10 +61,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       <View style={styles.content}>
         <View style={styles.imageContainer}>
           <Image 
-            source={{ uri: currentItem.image }} 
-            style={styles.illustration}
-            resizeMode="contain"
-          />
+              source={currentItem.image} 
+              style={styles.illustration}
+              resizeMode="contain"
+            />
+
         </View>
 
         <View style={styles.textContainer}>

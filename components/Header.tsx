@@ -1,15 +1,24 @@
+
 import React from "react"
-import { View, Text, StyleSheet, Image } from "react-native"
+import { View, Text, StyleSheet, Image, ActivityIndicator } from "react-native"
 
 interface HeaderProps {
   username: string
+  loading?: boolean 
 }
 
-const Header: React.FC<HeaderProps> = ({ username }) => {
+const Header: React.FC<HeaderProps> = ({ username, loading = false }) => {
   return (
     <View style={styles.container}>
-      <Image source={{ uri: "https://via.placeholder.com/50x50/66E0D0/FFFFFF?text=S" }} style={styles.logo} />
-      <Text style={styles.welcomeText}>Welcome back, {username}</Text>
+      <Image source={require("../assets/logo.png")} style={styles.logo} />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color="#333333" />
+          <Text style={styles.welcomeText}>Loading...</Text>
+        </View>
+      ) : (
+        <Text style={styles.welcomeText}>Welcome back, {username}</Text>
+      )}
     </View>
   )
 }
@@ -30,6 +39,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "600",
     color: "#333333",
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 })
 

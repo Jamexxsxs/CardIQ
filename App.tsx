@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUserTable } from './hooks/useUserTable'; 
 
 import Home from "./pages/Home";
 import Flashcard from "./pages/Flashcard";
@@ -161,35 +162,52 @@ function MainTabNavigator() {
 
   );
 }
-
 interface AuthContextType {
   isLoggedIn: boolean;
   userId: number | null;
+  currentUser: any | null;
   login: (userId: number, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   navigateToOnboarding: (userId: number) => void;
+  refreshUserData: () => Promise<void>; 
 }
 
 export const AuthContext = React.createContext<AuthContextType>({
   isLoggedIn: false,
   userId: null,
+  currentUser: null, 
   login: async () => {},
   logout: async () => {},
   navigateToOnboarding: () => {},
+  refreshUserData: async () => {}, 
 });
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [navigationRef, setNavigationRef] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const { getUserById } = useUserTable(); 
+
+ const fetchUserData = async (id: number) => {
+    try {
+      const userData = await getUserById(id);
+      setCurrentUser(userData);
+      console.log('user datea', userData)
+    } catch (err) {
+      console.error('Failed to fetch user data:', err);
+    }
+  };
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem('userId');
         if (storedUserId) {
-          setUserId(Number(storedUserId));
+          const id = Number(storedUserId);
+          setUserId(id);
           setIsLoggedIn(true);
+          await fetchUserData(id); 
         }
       } catch (err) {
         console.error('Failed to load user ID:', err);
@@ -202,21 +220,29 @@ export default function App() {
   const authContext = {
     isLoggedIn,
     userId,
+    currentUser, // Add this
     login: async (id: number, remember: boolean = true) => {
       setUserId(id);
       setIsLoggedIn(true);
+      await fetchUserData(id); // Add this line
       if (remember) {
         await AsyncStorage.setItem('userId', id.toString());
       }
     },
     logout: async () => {
       setUserId(null);
+      setCurrentUser(null); // Add this line
       setIsLoggedIn(false);
       await AsyncStorage.removeItem('userId');
     },
     navigateToOnboarding: (id: number) => {
       if (navigationRef) {
         navigationRef.navigate('Onboarding', { userId: id });
+      }
+    },
+    refreshUserData: async () => { // Add this function
+      if (userId) {
+        await fetchUserData(userId);
       }
     },
   };

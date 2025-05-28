@@ -52,10 +52,21 @@ export function useUserTable() {
     }
   };
 
+  const getUserById = async (userId: number) => {
+    try {
+      const row = await db.getFirstAsync('SELECT * FROM user WHERE id = ?;', [userId]) as any;
+      return row;
+    } catch (err) {
+      console.error('Get user error:', err);
+      return null;
+    }
+  };
+
   return {
     users,
     loading,
     addUser,
-    authenticateUser
+    authenticateUser,
+    getUserById
   };
 }

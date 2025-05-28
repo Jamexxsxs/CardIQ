@@ -1,6 +1,7 @@
-import React from "react"
+import React, { useContext } from "react" 
 import { StyleSheet, ScrollView, RefreshControl } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { AuthContext } from "../App"
 
 // Import components
 import Header from "../components/Header"
@@ -10,6 +11,7 @@ import RecentActivitySection from "../components/home/RecentActivitySection"
 const Home = ({ navigation }) => {
   const [refreshing, setRefreshing] = React.useState(false);
   const [refreshKey, setRefreshKey] = React.useState(0);
+  const { currentUser } = useContext(AuthContext);
 
   const onRefresh = React.useCallback(() => {
     const refreshData = async () => {
@@ -28,7 +30,7 @@ const Home = ({ navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Header username="Yushi" />
+        <Header username={(currentUser?.username?.split(" ")[0]) || "User"} />
         <CategorySection navigation={navigation} />
         <RecentActivitySection refreshKey={refreshKey}/>
       </ScrollView>
