@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as SQLite from 'expo-sqlite';
+import { Alert } from 'react-native';
 
 const db = SQLite.openDatabaseSync('cardIQ.db');
 
@@ -40,7 +41,7 @@ export function useCategoryTable(user_id: number) {
           await db.execAsync(
             `CREATE TABLE IF NOT EXISTS category (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
-              name TEXT NOT NULL UNIQUE,
+              name TEXT NOT NULL,
               color TEXT NOT NULL,
               user_id INTEGER NOT NULL,
               FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
@@ -80,11 +81,29 @@ export function useCategoryTable(user_id: number) {
     }
   };
 
-  const addCategory = (name: string) => {
+  const addCategory = async (name: string) => {
     const color = getRandomColor();
-    db.runAsync('INSERT INTO category (name, color, user_id) VALUES (?, ?, ?);', [name, color, user_id])
-      .then(() => console.log('Category added'))
-      .catch(err => console.error('Error:', err));
+
+    try {
+      const existing = await db.getAllAsync(
+        'SELECT * FROM category WHERE name = ? AND user_id = ?;',
+        [name, user_id]
+      );
+
+      if (existing.length > 0) {
+        console.warn('Category with the same name already exists for this user.');
+        Alert.alert('Duplicate Category', 'You already have a category with this name.');
+        return;
+      }
+
+      await db.runAsync(
+        'INSERT INTO category (name, color, user_id) VALUES (?, ?, ?);',
+        [name, color, user_id]
+      );
+      console.log('Category added');
+    } catch (err) {
+      console.error('Error:', err);
+    }
   };
 
   const updateCategory = (id: number, name: string) => {

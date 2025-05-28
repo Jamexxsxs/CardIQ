@@ -35,8 +35,8 @@ const GeneratePrompt: React.FC = () => {
     try {
       setIsGenerating(true);
       console.log("Generating flashcards:", { prompt, category, cardCount })
-      await generateCardsFromPrompt(prompt, category as any, cardCount);
-      navigation.goBack()
+      const {topic_id} = await generateCardsFromPrompt(prompt, category as any, cardCount);
+      navigation.navigate('FlashcardDetail', { id: topic_id })
     } catch (error) {
       console.error("Error generating flashcards:", error);
       // You might want to show an error message to the user here

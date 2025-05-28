@@ -1,8 +1,12 @@
-import React from "react"
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native"
+import React, { act, useContext, useEffect, useState } from "react"
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { useTopicTable } from "../../hooks/useTopicTable" 
+import { AuthContext } from "../../App";
+
+
 export interface Activity {
-  id: string
+  id: string | number
   subject: string
   chapter: string
   cardCount: number
@@ -10,41 +14,28 @@ export interface Activity {
   color: string
 }
 
-// Sample recent activities data
-const recentActivities: Activity[] = [
-  {
-    id: "1",
-    subject: "Biology",
-    chapter: "Chapter 3: Animal Kingdom",
-    cardCount: 15,
-    date: "Friday, March 28 2025",
-    color: "#4DC591",
-  },
-  {
-    id: "2",
-    subject: "Mathematics",
-    chapter: "Algebra",
-    cardCount: 15,
-    date: "Friday, March 28 2025",
-    color: "#F09E54",
-  },
-  {
-    id: "3",
-    subject: "Geography",
-    chapter: "Chapter 1",
-    cardCount: 15,
-    date: "Friday, March 28 2025",
-    color: "#8F98FF",
-  },
-]
+// Function to format date
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })
+}
 
 interface ActivityCardProps {
   activity: Activity
+  onPress?: () => void
 }
 
-const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => {
+const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onPress }) => {
   return (
-    <TouchableOpacity style={[styles.activityCard, { backgroundColor: activity.color }]}>
+    <TouchableOpacity 
+      style={[styles.activityCard, { backgroundColor: activity.color }]}
+      onPress={onPress}
+    >
       <View style={styles.cardContent}>
         <View>
           <Text style={styles.subjectTitle}>{activity.subject}</Text>
@@ -65,12 +56,73 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => {
 }
 
 const RecentActivitySection: React.FC = () => {
+  const { userId } = useContext(AuthContext);
+  const { getRecentActivity, refresh } = useTopicTable(userId)
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchRecentActivities = async () => {
+      try {
+        setLoading(true);
+        const activities = await getRecentActivity();
+
+        console.log(activities)
+
+        // Map database results to Activity interface
+        const mappedActivities: Activity[] = activities.map(item => ({
+          id: item.id || Math.random().toString(),
+          subject: item.category_name || "Uncategorized",
+          chapter: item.title || "No title",
+          cardCount: item.card_count || 0,
+          date: formatDate(item.added_datetime), 
+          color: item.color || "#8F98FF"
+        }));
+
+        setRecentActivities(mappedActivities);
+      } catch (error) {
+        console.error("Error fetching recent activities:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentActivities();
+  }, [userId]);
+
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.sectionTitle}>Recent Activity</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8F98FF" />
+        </View>
+      </View>
+    )
+  }
+
+  if (recentActivities.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.sectionTitle}>Recent Activity</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No recent activities found</Text>
+        </View>
+      </View>
+    )
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Recent Activity</Text>
       <View style={styles.activitiesContainer}>
         {recentActivities.map((activity) => (
-          <ActivityCard key={activity.id} activity={activity} />
+          <ActivityCard 
+            key={activity.id} 
+            activity={activity} 
+            onPress={() => console.log(`Activity ${activity.id} pressed`)}
+          />
         ))}
       </View>
     </View>
@@ -143,6 +195,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     opacity: 0.5,
   },
+  loadingContainer: {
+    height: 150,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyContainer: {
+    height: 100,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 16,
+  },
+  emptyText: {
+    color: "#666",
+    fontSize: 16,
+  }
 })
 
 export default RecentActivitySection
