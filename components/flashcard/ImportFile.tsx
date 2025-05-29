@@ -2,11 +2,20 @@
 
 import type React from "react"
 import { useContext, useEffect, useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Modal, ActivityIndicator } from "react-native"
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  Modal,
+  ActivityIndicator,
+  Alert,
+} from "react-native"
 import { Feather } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
 import * as DocumentPicker from "expo-document-picker"
-import * as FileSystem from "expo-file-system"
 import { useCategoryTable } from "../../hooks/useCategoryTable"
 import { useCardTable } from "../../hooks/useCardTable"
 import { AuthContext } from "../../App"
@@ -19,12 +28,15 @@ const ImportFile: React.FC = () => {
   const { generateCardsFromPDF } = useCardTable(userId)
 
   const [selectedFile, setSelectedFile] = useState<any>(null)
+  const [uploadedFileUrl, setUploadedFileUrl] = useState("")
   const [extractedText, setExtractedText] = useState("")
   const [category, setCategory] = useState("")
   const [categories, setCategories] = useState([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [cardCount, setCardCount] = useState(15)
+  const [isUploading, setIsUploading] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [processingStep, setProcessingStep] = useState("")
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -47,40 +59,36 @@ const ImportFile: React.FC = () => {
         setSelectedFile(file)
         console.log("Selected file:", file.name)
 
-        // Extract text from PDF
-        extractTextFromPDF(file.uri)
+        // Upload the file immediately after selection
+        await uploadFile(file)
       }
     } catch (err) {
       console.error("Error picking document:", err)
     }
   }
 
-  const extractTextFromPDF = async (uri: string) => {
+  const uploadFile = async (file: any) => {
     try {
-      setIsProcessing(true)
+      setIsUploading(true)
+      setProcessingStep("Uploading PDF file...")
 
-      // Step 1: Read the file as binary buffer
-      const fileBuffer = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      })
+      const fileName = file.uri.split("/").pop() || "upload.pdf"
+      const fileType = "application/pdf"
 
-      const fileName = uri.split('/').pop() || 'upload.pdf'
-      const fileType = 'application/pdf'
-
-      // Step 2: Convert to multipart form for upload
+      // Convert to multipart form for upload
       const formData = new FormData()
-      formData.append('file', {
-        uri,
+      formData.append("file", {
+        uri: file.uri,
         name: fileName,
         type: fileType,
-      } as any) // `as any` to fix React Native TS typings
+      } as any)
 
-      // Step 3: Upload to PDF.co file upload endpoint
-      const uploadRes = await fetch('https://api.pdf.co/v1/file/upload', {
-        method: 'POST',
+      // Upload to PDF.co file upload endpoint
+      const uploadRes = await fetch("https://api.pdf.co/v1/file/upload", {
+        method: "POST",
         headers: {
-          'x-api-key': PDFCO_API_KEY,
-          'Content-Type': 'multipart/form-data',
+          "x-api-key": PDFCO_API_KEY,
+          "Content-Type": "multipart/form-data",
         },
         body: formData,
       })
@@ -88,20 +96,40 @@ const ImportFile: React.FC = () => {
       const uploadJson = await uploadRes.json()
 
       if (!uploadJson || !uploadJson.url) {
-        throw new Error(uploadJson.message || 'File upload failed')
+        throw new Error(uploadJson.message || "File upload failed")
       }
 
-      const fileUrl = uploadJson.url
+      setUploadedFileUrl(uploadJson.url)
+      console.log("File uploaded successfully:", uploadJson.url)
 
-      // Step 4: Convert the uploaded PDF to text
-      const convertRes = await fetch('https://api.pdf.co/v1/pdf/convert/to/text-simple', {
-        method: 'POST',
+      Alert.alert("Upload Successful", "PDF file has been uploaded successfully. You can now generate flashcards.", [
+        { text: "OK", style: "default" },
+      ])
+    } catch (error) {
+      console.error("Error uploading file:", error)
+      Alert.alert("Upload Failed", "Failed to upload PDF file. Please try again.", [{ text: "OK", style: "default" }])
+      // Reset file selection on upload failure
+      setSelectedFile(null)
+      setUploadedFileUrl("")
+    } finally {
+      setIsUploading(false)
+      setProcessingStep("")
+    }
+  }
+
+  const extractTextFromPDF = async () => {
+    try {
+      setProcessingStep("Extracting text from PDF...")
+
+      // Convert the uploaded PDF to text
+      const convertRes = await fetch("https://api.pdf.co/v1/pdf/convert/to/text-simple", {
+        method: "POST",
         headers: {
-          'x-api-key': PDFCO_API_KEY,
-          'Content-Type': 'application/json',
+          "x-api-key": PDFCO_API_KEY,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          url: fileUrl,
+          url: uploadedFileUrl,
           inline: true,
           async: false,
         }),
@@ -110,35 +138,73 @@ const ImportFile: React.FC = () => {
       const convertJson = await convertRes.json()
 
       if (convertJson.error) {
-        throw new Error(convertJson.message || 'Text extraction failed')
+        throw new Error(convertJson.message || "Text extraction failed")
       }
 
-      setExtractedText(convertJson.body || '')
+      const text = convertJson.body || ""
+      console.log("Extracted text:", text)
+
+      if (!text.trim()) {
+        throw new Error("No readable text found in the PDF")
+      }
+
+      setExtractedText(text)
+      return text
     } catch (error) {
-      console.error('Error extracting text from PDF:', error)
-      alert('Failed to extract text from PDF. Please try again.')
-    } finally {
-      setIsProcessing(false)
+      console.error("Error extracting text from PDF:", error)
+      throw error
     }
   }
 
-  const handleSave = async () => {
-    if (!extractedText || !category) {
-      console.error("Missing required fields")
+  const handleGenerateFlashcards = async () => {
+    if (!uploadedFileUrl || !category) {
+      Alert.alert(
+        "Missing Information",
+        "Please upload a PDF file and select a category before generating flashcards.",
+        [{ text: "OK", style: "default" }],
+      )
       return
     }
 
     try {
       setIsProcessing(true)
+
+      // Step 1: Extract text from uploaded PDF
+      const text = await extractTextFromPDF()
+
+      // Step 2: Generate flashcards from extracted text
+      setProcessingStep("Generating flashcards...")
       console.log("Processing PDF text to flashcards:", { category, cardCount })
 
-      const { topic_id } = await generateCardsFromPDF(extractedText, category as any, cardCount)
+      const { topic_id } = await generateCardsFromPDF(text, category as any, cardCount)
+
+      // Navigate to the generated flashcards
       navigation.navigate("FlashcardDetail", { id: topic_id })
     } catch (error) {
-      console.error("Error generating flashcards from PDF:", error)
+      console.error("Error generating flashcards:", error)
+      Alert.alert(
+        "Generation Failed",
+        "Failed to generate flashcards from PDF. Please ensure the PDF contains readable text and try again.",
+        [{ text: "OK", style: "default" }],
+      )
     } finally {
       setIsProcessing(false)
+      setProcessingStep("")
     }
+  }
+
+  const getFileStatus = () => {
+    if (isUploading) return "Uploading..."
+    if (selectedFile && uploadedFileUrl) return "✅ Uploaded successfully"
+    if (selectedFile && !uploadedFileUrl) return "❌ Upload failed"
+    return "No file selected"
+  }
+
+  const getFileStatusColor = () => {
+    if (isUploading) return "#666"
+    if (selectedFile && uploadedFileUrl) return "#4A86E8"
+    if (selectedFile && !uploadedFileUrl) return "#E74C3C"
+    return "#666"
   }
 
   return (
@@ -157,8 +223,13 @@ const ImportFile: React.FC = () => {
             <Text style={styles.uploadText}>
               {selectedFile ? `Selected: ${selectedFile.name}` : "Upload a PDF and we'll convert it to flashcards."}
             </Text>
-            <TouchableOpacity style={styles.browseButton} onPress={pickDocument} disabled={isProcessing}>
-              <Text style={styles.browseButtonText}>Browse Files</Text>
+            <Text style={[styles.fileStatus, { color: getFileStatusColor() }]}>{getFileStatus()}</Text>
+            <TouchableOpacity
+              style={[styles.browseButton, isUploading && styles.browseButtonDisabled]}
+              onPress={pickDocument}
+              disabled={isUploading || isProcessing}
+            >
+              <Text style={styles.browseButtonText}>{isUploading ? "Uploading..." : "Browse Files"}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -171,8 +242,8 @@ const ImportFile: React.FC = () => {
           <Text style={styles.label}>Category</Text>
           <TouchableOpacity
             style={styles.selectInput}
-            onPress={() => !isProcessing && setShowDropdown(!showDropdown)}
-            disabled={isProcessing}
+            onPress={() => !isUploading && !isProcessing && setShowDropdown(!showDropdown)}
+            disabled={isUploading || isProcessing}
           >
             <Text style={styles.selectText}>
               {category ? categories.find((c) => c.id === category)?.name : "Select Category"}
@@ -180,7 +251,7 @@ const ImportFile: React.FC = () => {
             <Feather name="chevron-down" size={20} color="#666" />
           </TouchableOpacity>
 
-          {showDropdown && !isProcessing && (
+          {showDropdown && !isUploading && !isProcessing && (
             <View style={styles.dropdown}>
               {categories.map((cat) => (
                 <TouchableOpacity
@@ -205,16 +276,16 @@ const ImportFile: React.FC = () => {
                 style={[
                   styles.cardCountButton,
                   cardCount === count && styles.cardCountButtonActive,
-                  isProcessing && styles.cardCountButtonDisabled,
+                  (isUploading || isProcessing) && styles.cardCountButtonDisabled,
                 ]}
-                onPress={() => !isProcessing && setCardCount(count)}
-                disabled={isProcessing}
+                onPress={() => !(isUploading || isProcessing) && setCardCount(count)}
+                disabled={isUploading || isProcessing}
               >
                 <Text
                   style={[
                     styles.cardCountText,
                     cardCount === count && styles.cardCountTextActive,
-                    isProcessing && styles.cardCountTextDisabled,
+                    (isUploading || isProcessing) && styles.cardCountTextDisabled,
                   ]}
                 >
                   {count}
@@ -225,22 +296,23 @@ const ImportFile: React.FC = () => {
         </View>
 
         <TouchableOpacity
-          style={[styles.saveButton, (!selectedFile || isProcessing) && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={!selectedFile || isProcessing}
+          style={[
+            styles.saveButton,
+            (!uploadedFileUrl || !category || isUploading || isProcessing) && styles.saveButtonDisabled,
+          ]}
+          onPress={handleGenerateFlashcards}
+          disabled={!uploadedFileUrl || !category || isUploading || isProcessing}
         >
           <Text style={styles.saveButtonText}>{isProcessing ? "Processing..." : "Generate Flashcards"}</Text>
         </TouchableOpacity>
       </ScrollView>
 
       {/* Loading Modal */}
-      <Modal transparent={true} animationType="fade" visible={isProcessing} onRequestClose={() => {}}>
+      <Modal transparent={true} animationType="fade" visible={isUploading || isProcessing} onRequestClose={() => {}}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ActivityIndicator size="large" color="#4A86E8" />
-            <Text style={styles.modalText}>
-              {extractedText ? "Generating flashcards..." : "Extracting text from PDF..."}
-            </Text>
+            <Text style={styles.modalText}>{processingStep || "Processing..."}</Text>
             <Text style={styles.modalSubtext}>This may take a few moments</Text>
           </View>
         </View>
@@ -290,6 +362,12 @@ const styles = StyleSheet.create({
   uploadText: {
     textAlign: "center",
     color: "#666",
+    marginBottom: 8,
+  },
+  fileStatus: {
+    textAlign: "center",
+    fontSize: 12,
+    fontWeight: "500",
     marginBottom: 16,
   },
   browseButton: {
@@ -297,6 +375,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
+  },
+  browseButtonDisabled: {
+    opacity: 0.6,
+    backgroundColor: "#A0BFF0",
   },
   browseButtonText: {
     color: "white",
@@ -312,16 +394,6 @@ const styles = StyleSheet.create({
     color: "#4A86E8",
     marginBottom: 8,
     marginTop: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E1E3E6",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  textArea: {
-    minHeight: 100,
   },
   selectInput: {
     borderWidth: 1,
@@ -399,7 +471,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",

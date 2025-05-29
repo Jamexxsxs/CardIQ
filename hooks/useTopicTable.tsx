@@ -132,9 +132,11 @@ export function useTopicTable(user_id: number) {
   const getRecentlyAdded = async (limit: number = 10) => {
     try {
       const rows = await db.getAllAsync(
-        `SELECT 
+        `SELECT
+           topic.id, 
            topic.category_id,
            category.name AS category_name,
+           category.color,
            topic.title,
            topic.card_count,
            topic.added_datetime
@@ -152,6 +154,72 @@ export function useTopicTable(user_id: number) {
     }
   };
 
+  const getCurrentStreak = async (): Promise<number> => {
+    try {
+      const rows = await db.getAllAsync(
+        `SELECT DISTINCT DATE(added_datetime, '+8 hours') AS added_date
+        FROM topic
+        WHERE user_id = ? AND added_datetime IS NOT NULL
+        ORDER BY added_date DESC;`,
+        [user_id]
+      );
+
+      const addedDates = rows.map(row => row.added_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let streak = 0;
+
+      for (let i = 0; i < addedDates.length; i++) {
+        const expectedDate = new Date(today);
+        expectedDate.setDate(today.getDate() - i);
+
+        const dbDate = new Date(addedDates[i] + 'T00:00:00');
+
+        if (dbDate.toDateString() === expectedDate.toDateString()) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+
+      return streak;
+    } catch (err) {
+      console.error('Get current streak error:', err);
+      return 0;
+    }
+  };
+
+  const getTotalTopicCount = async (): Promise<number> => {
+    try {
+      const result = await db.getFirstAsync(
+        `SELECT COUNT(*) AS count FROM topic WHERE user_id = ?;`,
+        [user_id]
+      );
+      return result?.count ?? 0;
+    } catch (err) {
+      console.error("Error getting total topic count:", err);
+      return 0;
+    }
+  };
+
+  const getReviewedThisWeekCount = async (): Promise<number> => {
+    try {
+      const result = await db.getFirstAsync(
+        `SELECT COUNT(DISTINCT id) AS count
+        FROM topic
+        WHERE user_id = ?
+          AND activity_datetime IS NOT NULL
+          AND DATE(activity_datetime) >= DATE('now', 'weekday 0', '-6 days');`,
+        [user_id]
+      );
+      return result?.count ?? 0;
+    } catch (err) {
+      console.error("Error getting reviewed topics this week:", err);
+      return 0;
+    }
+  };
+
   return {
     topics,
     loading,
@@ -162,6 +230,9 @@ export function useTopicTable(user_id: number) {
     fetchTopicsByCategory,
     getRecentActivity,
     getRecentlyAdded,
+    getCurrentStreak,
+    getTotalTopicCount,
+    getReviewedThisWeekCount,
     refresh: fetchTopics,
   };
 }

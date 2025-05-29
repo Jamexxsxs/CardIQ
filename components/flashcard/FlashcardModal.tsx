@@ -76,7 +76,7 @@ const FlashcardModal: React.FC<FlashcardModalProps> = ({
                   <View style={styles.optionTextContainer}>
                     <Text style={styles.optionTitle}>Import from File</Text>
                     <Text style={styles.optionDescription}>
-                      Upload a PDF, PPT, or text file and we'll convert it to flashcards.
+                      Upload a PDF and we'll convert it to flashcards.
                     </Text>
                   </View>
                 </TouchableOpacity>

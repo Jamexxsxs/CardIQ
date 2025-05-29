@@ -47,6 +47,15 @@ const Flashcard: React.FC = () => {
     }, 300)
   }
 
+  const handleCloseModal = () => {
+    setFlashcardModalVisible(false)
+
+    // Navigate back to home screen when modal is closed without selection
+    setTimeout(() => {
+      navigation.navigate("HomeStack" as never)
+    }, 300)
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Create New Flashcard</Text>
@@ -54,11 +63,7 @@ const Flashcard: React.FC = () => {
         <Text>Flashcard creation form will go here</Text>
       </View>
 
-      <FlashcardModal
-        visible={flashcardModalVisible}
-        onClose={() => setFlashcardModalVisible(false)}
-        onSelectOption={handleSelectOption}
-      />
+      <FlashcardModal visible={flashcardModalVisible} onClose={handleCloseModal} onSelectOption={handleSelectOption} />
     </SafeAreaView>
   )
 }

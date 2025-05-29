@@ -16,7 +16,8 @@ export function useUserTable() {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL
+            password TEXT NOT NULL,
+            long_streak INTEGER NOT NULL DEFAULT 0
           );`
         );
       } catch (err) {
@@ -62,11 +63,25 @@ export function useUserTable() {
     }
   };
 
+  const updateUserStreak = async (userId: number, newStreak: number) => {
+    try {
+      await db.runAsync(
+        'UPDATE user SET long_streak = ? WHERE id = ?;',
+        [newStreak, userId]
+      );
+      return true;
+    } catch (err) {
+      console.error('Update user streak error:', err);
+      return false;
+    }
+  };
+
   return {
     users,
     loading,
     addUser,
     authenticateUser,
-    getUserById
+    getUserById,
+    updateUserStreak,
   };
 }

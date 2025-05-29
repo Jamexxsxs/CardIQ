@@ -1,43 +1,73 @@
-import React, { useContext } from "react"
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Feather } from '@expo/vector-icons';
-import StatsCard from "../components/profile/StatsCard";
-import RecentlyAddedCard from "../components/profile/RecentlyAddedCard";
-import { AuthContext } from "../App"; 
-import { resetDatabase } from "../utils/dbUtils";
+"use client"
 
-const recentlyAdded = [
-  {
-    id: "1",
-    subject: "Biology",
-    chapter: "Chapter 3: Animal Kingdom",
-    cardCount: 15,
-    date: "Friday, March 28 2025",
-    color: "#4DC591",
-  },
-  {
-    id: "2",
-    subject: "Mathematics",
-    chapter: "Algebra",
-    cardCount: 15,
-    date: "Friday, March 28 2025",
-    color: "#F09E54",
-  },
-  {
-    id: "3",
-    subject: "Biology",
-    chapter: "Chapter 4: Plant Kingdom",
-    cardCount: 12,
-    date: "Thursday, March 27 2025",
-    color: "#8F98FF",
-  },
-]
+import { useContext, useState, useCallback, useEffect } from "react"
+import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView, Alert, RefreshControl } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { Feather } from "@expo/vector-icons"
+import StatsCard from "../components/profile/StatsCard"
+import RecentlyAddedSection from "../components/profile/RecentlyAddedCard"
+import { AuthContext } from "../App"
+import { resetDatabase } from "../utils/dbUtils"
+import { useTopicTable } from "../hooks/useTopicTable"
+import { useCategoryTable } from "../hooks/useCategoryTable"
+import { useUserTable } from "../hooks/useUserTable"
 
 const Profile = () => {
-  const { logout } = useContext(AuthContext);
-  const { currentUser } = useContext(AuthContext);
-  
+  const { logout, currentUser } = useContext(AuthContext)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const {
+    getCurrentStreak,
+    getTotalTopicCount,
+    getReviewedThisWeekCount
+  } = useTopicTable(currentUser?.id)  
+  const { getTotalCategoryCount } = useCategoryTable(currentUser?.id)
+  const { updateUserStreak } = useUserTable()
+  const [currentStreak, setCurrentStreak] = useState(0)
+  const [totalTopics, setTotalTopics] = useState(0)
+  const [reviewedThisWeek, setReviewedThisWeek] = useState(0)
+  const [totalCategories, setTotalCategories] = useState(0)
+
+
+  const onRefresh = useCallback(() => {
+    const refreshData = async () => {
+      setRefreshing(true)
+      setRefreshKey((prev) => prev + 1)
+      await Promise.all([fetchStreak(), fetchStats()])
+      setRefreshing(false)
+    }
+    refreshData()
+  }, [])
+
+  const fetchStreak = async () => {
+    const streak = await getCurrentStreak();
+    setCurrentStreak(streak);
+
+    if (currentUser && streak > (currentUser.long_streak || 0)) {
+      const updated = await updateUserStreak(currentUser.id, streak);
+      if (updated) {
+        currentUser.long_streak = streak;
+        setRefreshKey((prev) => prev + 1);
+      }
+    }
+  };
+
+  const fetchStats = async () => {
+    const [total, reviewed, categories] = await Promise.all([
+      getTotalTopicCount(),
+      getReviewedThisWeekCount(),
+      getTotalCategoryCount()
+    ])
+    setTotalTopics(total)
+    setReviewedThisWeek(reviewed)
+    setTotalCategories(categories)
+  }
+
+  useEffect(() => {
+    fetchStreak()
+    fetchStats()
+  }, [refreshKey])
+
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
@@ -47,8 +77,8 @@ const Profile = () => {
       {
         text: "Logout",
         onPress: () => {
-          console.log("User logged out");
-          logout();
+          console.log("User logged out")
+          logout()
         },
         style: "destructive",
       },
@@ -57,29 +87,33 @@ const Profile = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         <View style={styles.profileHeader}>
           <View style={styles.profileImageContainer}>
-            <Image
-              source={require("../assets/logo.png")}
-              style={styles.profileImage}
-            />
+            <Image source={require("../assets/logo.png")} style={styles.profileImage} />
           </View>
           <Text style={styles.username}>{currentUser?.username || "User"}</Text>
           <TouchableOpacity
             style={styles.iconButton}
             onPress={() => {
-              Alert.alert("Reset Database", "Are you sure you want to reset the database? This action cannot be undone.", [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Reset",
-                  style: "destructive",
-                  onPress: async () => {
-                    await resetDatabase();
-                    Alert.alert("Database has been reset.");
+              Alert.alert(
+                "Reset Database",
+                "Are you sure you want to reset the database? This action cannot be undone.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Reset",
+                    style: "destructive",
+                    onPress: async () => {
+                      await resetDatabase()
+                      Alert.alert("Database has been reset.")
+                    },
                   },
-                },
-              ]);
+                ],
+              )
             }}
           >
             <Feather name="trash-2" size={20} color="#FF3B30" />
@@ -101,39 +135,46 @@ const Profile = () => {
               </View>
             </View>
             <Text style={styles.streakDays}>
-              <Text style={styles.streakNumber}>5</Text> days
+              <Text style={styles.streakNumber}>{currentStreak}</Text> days
             </Text>
           </View>
 
           <View style={styles.statsRow}>
-            <StatsCard title="Cards Reviewed" value="555" backgroundColor="#ECF3FF" textColor="#4A86E8" />
-            <StatsCard title="Cards Mastered" value="555" backgroundColor="#E6F8EF" textColor="#27AE60" />
+            <StatsCard
+              title="No. of Categories"
+              value={totalCategories.toString()}
+              backgroundColor="#ECF3FF"
+              textColor="#4A86E8"
+            />            
+            <StatsCard 
+              title="No. of Topics"
+              value={totalTopics.toString()} 
+              backgroundColor="#ECF3FF" 
+              textColor="#4A86E8" 
+            />
           </View>
 
           <View style={styles.statsRow}>
             <StatsCard
-              title="Study Time"
-              value="3.5 h"
+              title="Topics Reviewed"
+              value={reviewedThisWeek.toString()}
               subtitle="this week"
               backgroundColor="#ECF3FF"
               textColor="#4A86E8"
             />
             <StatsCard
               title="Longest Streak"
-              value="555"
+              value={currentUser?.long_streak}
               subtitle="days"
-              backgroundColor="#E6F8EF"
-              textColor="#27AE60"
+              backgroundColor="#ECF3FF"
+              textColor="#4A86E8"
             />
           </View>
         </View>
-
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Recently Added</Text>
           <View style={styles.recentlyAddedContainer}>
-            {recentlyAdded.map((activity) => (
-              <RecentlyAddedCard key={activity.id} activity={activity} />
-            ))}
+            <RecentlyAddedSection refreshKey={refreshKey} />
           </View>
         </View>
       </ScrollView>

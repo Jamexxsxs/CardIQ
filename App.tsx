@@ -1,65 +1,76 @@
 "use client"
 
 // App.tsx
-import React, { useState, useContext, createContext, useEffect } from 'react';
-import { NavigationContainer } from "@react-navigation/native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createStackNavigator } from "@react-navigation/stack";
-import { Ionicons } from "@expo/vector-icons";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUserTable } from './hooks/useUserTable'; 
+import React, { useState, useContext, useEffect } from "react"
+import { NavigationContainer } from "@react-navigation/native"
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { createStackNavigator } from "@react-navigation/stack"
+import { Ionicons } from "@expo/vector-icons"
+import { StatusBar } from "expo-status-bar"
+import { SafeAreaProvider } from "react-native-safe-area-context"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { useUserTable } from "./hooks/useUserTable"
+import { View } from "react-native"
+import { CommonActions } from '@react-navigation/native'
 
-import Home from "./pages/Home";
-import Flashcard from "./pages/Flashcard";
-import Profile from "./pages/Profile";
-import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
-import Onboarding from "./pages/Onboarding";
-import CategoryContent from "./components/home/CategoryContent";
-import FlashcardDetail from "./components/home/FlashcardDetail";
+import Home from "./pages/Home"
+import Flashcard from "./pages/Flashcard"
+import Profile from "./pages/Profile"
+import Login from "./pages/Login"
+import SignUp from "./pages/SignUp"
+import Onboarding from "./pages/Onboarding"
+import CategoryContent from "./components/home/CategoryContent"
+import FlashcardDetail from "./components/home/FlashcardDetail"
 import GeneratePrompt from "./components/flashcard/GeneratePrompt"
 import ImportFile from "./components/flashcard/ImportFile"
-import CardFlow from './components/home/CardFlow';
-import CompleteCard from './components/home/CompleteCard';
+import CardFlow from "./components/home/CardFlow"
+import CompleteCard from "./components/home/CompleteCard"
 
 type RootTabParamList = {
-  HomeStack: undefined;
-  FlashcardStack: undefined;
-  Profile: undefined;
-};
+  HomeStack: undefined
+  FlashcardStack: undefined
+  ProfileStack: undefined
+}
 
 type HomeStackParamList = {
-  Home: undefined;
-  CategoryContent: { id: string; title: string };
-  FlashcardDetail: { id: any };
-  Flashcard: undefined;
-  GeneratePrompt: undefined;
-  CardFlow: { topicId: string; topicTitle: string };
-  CompleteCard: {topicId: string; topicTitle: string};
-};
+  Home: undefined
+  CategoryContent: { id: string; title: string }
+  FlashcardDetail: { id: any }
+  Flashcard: undefined
+  GeneratePrompt: undefined
+  CardFlow: { topicId: string; topicTitle: string }
+  CompleteCard: { topicId: string; topicTitle: string }
+}
 
 type FlashcardStackParamList = {
   Flashcard: undefined
   GeneratePrompt: undefined
-  FlashcardDetail: { id: any };
-  CardFlow: { topicId: string; topicTitle: string };
+  FlashcardDetail: { id: any }
+  CardFlow: { topicId: string; topicTitle: string }
   ImportFile: undefined
-  CompleteCard: {topicId: string; topicTitle: string};
+  CompleteCard: { topicId: string; topicTitle: string }
+}
+
+type ProfileStackParamList = {
+  Profile: undefined
+  Flashcard: undefined
+  FlashcardDetail: { id: any }
+  CardFlow: { topicId: string; topicTitle: string }
+  CompleteCard: { topicId: string; topicTitle: string }
 }
 
 type AuthStackParamList = {
-  Login: undefined;
-  SignUp: undefined;
-  Onboarding: { userId: number };
-};
+  Login: undefined
+  SignUp: undefined
+  Onboarding: { userId: number }
+}
 
-const Tab = createBottomTabNavigator<RootTabParamList>();
-const HomeStack = createStackNavigator<HomeStackParamList>();
+const Tab = createBottomTabNavigator<RootTabParamList>()
+const HomeStack = createStackNavigator<HomeStackParamList>()
 const FlashcardStack = createStackNavigator<FlashcardStackParamList>()
-const AuthStack = createStackNavigator<AuthStackParamList>();
-const RootStack = createStackNavigator<{ Main: undefined; Auth: undefined }>();
+const ProfileStack = createStackNavigator<ProfileStackParamList>()
+const AuthStack = createStackNavigator<AuthStackParamList>()
+const RootStack = createStackNavigator<{ Main: undefined; Auth: undefined }>()
 
 // Home stack navigator
 function HomeStackScreen() {
@@ -73,7 +84,7 @@ function HomeStackScreen() {
       <HomeStack.Screen name="CardFlow" component={CardFlow} />
       <HomeStack.Screen name="CompleteCard" component={CompleteCard} />
     </HomeStack.Navigator>
-  );
+  )
 }
 
 // Flashcard stack navigator
@@ -90,6 +101,18 @@ function FlashcardStackScreen() {
   )
 }
 
+function ProfileStackScreen() {
+  return (
+    <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+      <ProfileStack.Screen name="Profile" component={Profile} />
+      <ProfileStack.Screen name="Flashcard" component={Flashcard} />
+      <ProfileStack.Screen name="CardFlow" component={CardFlow} />
+      <ProfileStack.Screen name="FlashcardDetail" component={FlashcardDetail} />
+      <ProfileStack.Screen name="CompleteCard" component={CompleteCard} />
+    </ProfileStack.Navigator>
+  )
+}
+
 // Auth stack navigator
 function AuthStackScreen() {
   return (
@@ -98,18 +121,18 @@ function AuthStackScreen() {
       <AuthStack.Screen name="SignUp" component={SignUp} />
       <AuthStack.Screen name="Onboarding" component={OnboardingScreen} />
     </AuthStack.Navigator>
-  );
+  )
 }
 
 // Onboarding screen wrapper
 function OnboardingScreen({ route }: { route: { params: { userId: number } } }) {
-  const { login } = useContext(AuthContext);
-  
-  const handleOnboardingComplete = async () => {
-    await login(route.params.userId, true);
-  };
+  const { login } = useContext(AuthContext)
 
-  return <Onboarding onComplete={handleOnboardingComplete} />;
+  const handleOnboardingComplete = async () => {
+    await login(route.params.userId, true)
+  }
+
+  return <Onboarding onComplete={handleOnboardingComplete} />
 }
 
 // Main tab navigator
@@ -118,136 +141,186 @@ function MainTabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-            let iconName: keyof typeof Ionicons.glyphMap = "help-outline";
+          let iconName: keyof typeof Ionicons.glyphMap = 'help-outline'
 
-          if (route.name === "HomeStack") {
-            iconName = focused ? "home" : "home-outline";
-          } else if (route.name === "FlashcardStack") {
-            iconName = focused ? "add-circle" : "add-circle-outline";
-          } else if (route.name === "Profile") {
-            iconName = focused ? "person" : "person-outline";
+          if (route.name === 'HomeStack') {
+            iconName = focused ? 'home' : 'home-outline'
+          } else if (route.name === 'FlashcardStack') {
+            iconName = focused ? 'add-circle' : 'add-circle-outline'
+          } else if (route.name === 'ProfileStack') {
+            iconName = focused ? 'person' : 'person-outline'
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName} size={size} color={color} />
         },
-        tabBarActiveTintColor: "#4A86E8",
-        tabBarInactiveTintColor: "gray",
+        tabBarActiveTintColor: '#4A86E8',
+        tabBarInactiveTintColor: 'gray',
         headerShown: false,
       })}
     >
       <Tab.Screen
-       name="HomeStack" 
-       component={HomeStackScreen}
-      options={{ tabBarLabel: "Home" }} 
+        name="HomeStack"
+        component={HomeStackScreen}
+        options={{ tabBarLabel: 'Home' }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Prevent default behavior
+            e.preventDefault()
+
+            // Reset the stack inside HomeStack to initial screen
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'HomeStack' }],
+              })
+            )
+
+            // Then navigate to HomeStack initial screen
+            navigation.navigate('HomeStack', { screen: 'Home' })
+          },
+        })}
       />
+
       <Tab.Screen
         name="FlashcardStack"
         component={FlashcardStackScreen}
         options={{
-          tabBarLabel: "Flashcard",
+          tabBarLabel: 'Flashcard',
           tabBarIcon: ({ size }) => (
-            <Ionicons
-              name="add"
-              size={size}
-              color="white"
+            <View
               style={{
-                backgroundColor: "#4A86E8",
-                borderRadius: 8,
-                padding: 5,
+                width: size + 16,
+                height: size + 16,
+                backgroundColor: '#4A86E8',
+                borderRadius: (size + 16) / 2,
+                justifyContent: 'center',
+                alignItems: 'center',
               }}
-            />
+            >
+              <Ionicons name="add" size={size} color="white" />
+            </View>
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault()
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'FlashcardStack' }],
+              })
+            )
+            navigation.navigate('FlashcardStack', { screen: 'Flashcard' })
+          },
+        })}
       />
-      <Tab.Screen name="Profile" component={Profile} />
-    </Tab.Navigator>
 
-  );
+      <Tab.Screen
+        name="ProfileStack"
+        component={ProfileStackScreen}
+        options={{ tabBarLabel: 'Profile' }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault()
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'ProfileStack' }],
+              })
+            )
+            navigation.navigate('ProfileStack', { screen: 'Profile' })
+          },
+        })}
+      />
+    </Tab.Navigator>
+  )
 }
+
 interface AuthContextType {
-  isLoggedIn: boolean;
-  userId: number | null;
-  currentUser: any | null;
-  login: (userId: number, rememberMe?: boolean) => Promise<void>;
-  logout: () => Promise<void>;
-  navigateToOnboarding: (userId: number) => void;
-  refreshUserData: () => Promise<void>; 
+  isLoggedIn: boolean
+  userId: number | null
+  currentUser: any | null
+  login: (userId: number, rememberMe?: boolean) => Promise<void>
+  logout: () => Promise<void>
+  navigateToOnboarding: (userId: number) => void
+  refreshUserData: () => Promise<void>
 }
 
 export const AuthContext = React.createContext<AuthContextType>({
   isLoggedIn: false,
   userId: null,
-  currentUser: null, 
+  currentUser: null,
   login: async () => {},
   logout: async () => {},
   navigateToOnboarding: () => {},
-  refreshUserData: async () => {}, 
-});
+  refreshUserData: async () => {},
+})
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
-  const [navigationRef, setNavigationRef] = useState<any>(null);
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
-  const { getUserById } = useUserTable(); 
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userId, setUserId] = useState<number | null>(null)
+  const [navigationRef, setNavigationRef] = useState<any>(null)
+  const [currentUser, setCurrentUser] = useState<any | null>(null)
+  const { getUserById } = useUserTable()
 
- const fetchUserData = async (id: number) => {
+  const fetchUserData = async (id: number) => {
     try {
-      const userData = await getUserById(id);
-      setCurrentUser(userData);
-      console.log('user datea', userData)
+      const userData = await getUserById(id)
+      setCurrentUser(userData)
+      console.log("user datea", userData)
     } catch (err) {
-      console.error('Failed to fetch user data:', err);
+      console.error("Failed to fetch user data:", err)
     }
-  };
+  }
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const storedUserId = await AsyncStorage.getItem('userId');
+        const storedUserId = await AsyncStorage.getItem("userId")
         if (storedUserId) {
-          const id = Number(storedUserId);
-          setUserId(id);
-          setIsLoggedIn(true);
-          await fetchUserData(id); 
+          const id = Number(storedUserId)
+          setUserId(id)
+          setIsLoggedIn(true)
+          await fetchUserData(id)
         }
       } catch (err) {
-        console.error('Failed to load user ID:', err);
+        console.error("Failed to load user ID:", err)
       }
-    };
+    }
 
-    loadUserData();
-  }, []);
+    loadUserData()
+  }, [])
 
   const authContext = {
     isLoggedIn,
     userId,
     currentUser, // Add this
-    login: async (id: number, remember: boolean = true) => {
-      setUserId(id);
-      setIsLoggedIn(true);
-      await fetchUserData(id); // Add this line
+    login: async (id: number, remember = true) => {
+      setUserId(id)
+      setIsLoggedIn(true)
+      await fetchUserData(id) // Add this line
       if (remember) {
-        await AsyncStorage.setItem('userId', id.toString());
+        await AsyncStorage.setItem("userId", id.toString())
       }
     },
     logout: async () => {
-      setUserId(null);
-      setCurrentUser(null); // Add this line
-      setIsLoggedIn(false);
-      await AsyncStorage.removeItem('userId');
+      setUserId(null)
+      setCurrentUser(null) // Add this line
+      setIsLoggedIn(false)
+      await AsyncStorage.removeItem("userId")
     },
     navigateToOnboarding: (id: number) => {
       if (navigationRef) {
-        navigationRef.navigate('Onboarding', { userId: id });
+        navigationRef.navigate("Onboarding", { userId: id })
       }
     },
-    refreshUserData: async () => { // Add this function
+    refreshUserData: async () => {
+      // Add this function
       if (userId) {
-        await fetchUserData(userId);
+        await fetchUserData(userId)
       }
     },
-  };
+  }
 
   return (
     <SafeAreaProvider>
@@ -264,5 +337,5 @@ export default function App() {
         </NavigationContainer>
       </AuthContext.Provider>
     </SafeAreaProvider>
-  );
+  )
 }
