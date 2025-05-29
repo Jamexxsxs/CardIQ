@@ -46,6 +46,7 @@ type FlashcardStackParamList = {
   FlashcardDetail: { id: any };
   CardFlow: { topicId: string; topicTitle: string };
   ImportFile: undefined
+  CompleteCard: {topicId: string; topicTitle: string};
 }
 
 type AuthStackParamList = {
@@ -84,6 +85,7 @@ function FlashcardStackScreen() {
       <FlashcardStack.Screen name="CardFlow" component={CardFlow} />
       <FlashcardStack.Screen name="FlashcardDetail" component={FlashcardDetail} />
       <FlashcardStack.Screen name="ImportFile" component={ImportFile} />
+      <FlashcardStack.Screen name="CompleteCard" component={CompleteCard} />
     </FlashcardStack.Navigator>
   )
 }

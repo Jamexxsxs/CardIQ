@@ -148,7 +148,6 @@ const CardFlow = ({ route, navigation }) => {
     }
   }, [currentCardIndex, cardFeedbackData])
 
-  // Save current index when it changes
   useEffect(() => {
     saveToStorage("currentIndex", currentCardIndex)
   }, [currentCardIndex])
@@ -157,10 +156,8 @@ const CardFlow = ({ route, navigation }) => {
   const totalCards = cards.length
   const progressPercentage = totalCards > 0 ? ((currentCardIndex + 1) / totalCards) * 100 : 0
 
-  // Check if the current card has been revealed
   const isCurrentCardRevealed = revealedCards.has(currentCardIndex)
 
-  // Calculate estimated time like CategoryContent
   const getEstimatedTime = () => {
     if (!totalCards) return "0min"
     return `${Math.ceil(totalCards * 0.5)}min`
@@ -251,7 +248,6 @@ const CardFlow = ({ route, navigation }) => {
           setFeedbackMessage(feedback.message)
           setIsAnswerCorrect(feedback.isCorrect)
 
-          // Save feedback data to storage
           saveToStorage("feedbackData", newFeedbackData)
         }
       }
@@ -261,10 +257,8 @@ const CardFlow = ({ route, navigation }) => {
   
   const handleRevealOrNext = () => {
     if (!isCurrentCardRevealed) {
-      // If not revealed yet, reveal the answer
       flipCard()
     } else {
-      // If already revealed, go to next card
       handleNext()
     }
   }
@@ -276,7 +270,6 @@ const CardFlow = ({ route, navigation }) => {
       setShowAnswer(false)
       flipAnimation.setValue(0)
     } else {
-      // Study session completed - navigate to CompleteCard screen
       navigation.navigate("CompleteCard", {
         topicId,
         topicTitle,
@@ -342,7 +335,6 @@ const CardFlow = ({ route, navigation }) => {
 
   const categoryColor = category?.color || "#F09E54"
 
-  // Dynamic styles for flashcard with conditional shadow
   const flashcardBase = {
     position: "absolute",
     width: "100%",
@@ -390,7 +382,7 @@ const CardFlow = ({ route, navigation }) => {
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>{topicTitle}</Text>
+          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{topicTitle}</Text>
 
           {/* Progress Section */}
           <View style={styles.progressSection}>
@@ -542,6 +534,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 10,
     marginBottom: 25,
+    width: 300,
   },
   progressSection: {
     paddingHorizontal: 20,

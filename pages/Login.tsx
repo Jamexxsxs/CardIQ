@@ -45,9 +45,9 @@ const Login = () => {
         style={styles.keyboardAvoidView}
       >
         <View style={styles.content}>
-          <Image 
-            source={{ uri: 'https://images.pexels.com/photos/19003599/pexels-photo-19003599/free-photo-of-the-cardiq-logo-with-a-cute-brain-and-flashcards.png' }} 
-            style={styles.logo} 
+          <Image
+            source={require("../assets/logo.png")}
+            style={styles.logo}
           />
           
           <Text style={styles.title}>Welcome back!</Text>
@@ -119,14 +119,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 180,
+    height: 180,
     borderRadius: 24,
     marginBottom: 24,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: 30,
+    fontWeight: 'bold',
     color: '#4A86E8',
     marginBottom: 32,
   },

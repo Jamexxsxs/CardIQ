@@ -54,7 +54,7 @@ const SignUp = () => {
       >
         <View style={styles.content}>
           <Image 
-            source={{ uri: 'https://images.pexels.com/photos/19003599/pexels-photo-19003599/free-photo-of-the-cardiq-logo-with-a-cute-brain-and-flashcards.png' }} 
+            source={require("../assets/logo.png")}
             style={styles.logo} 
           />
           
@@ -63,7 +63,7 @@ const SignUp = () => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Yushi Coquilla"
+              placeholder="Steve Brown"
               placeholderTextColor="#999"
               value={name}
               onChangeText={setName}
@@ -145,14 +145,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 180,
+    height: 180,
     borderRadius: 24,
     marginBottom: 24,
   },
   title: {
     fontSize: 28,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#4A86E8',
     marginBottom: 32,
   },
