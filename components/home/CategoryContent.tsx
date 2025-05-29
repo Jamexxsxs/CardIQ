@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTopicTable } from '../../hooks/useTopicTable';
@@ -10,13 +10,15 @@ import { useIsFocused } from '@react-navigation/native';
 const CategoryContent = ({ route, navigation }) => {
   const { id, title } = route.params;
   const { userId } = useContext(AuthContext);
-  const { topics, loading, fetchTopicsByCategory } = useTopicTable(userId);
+  const { topics, loading, fetchTopicsByCategory, deleteTopic } = useTopicTable(userId)
   const { getSpecificCategory } = useCategoryTable(userId);
   
   const [categoryData, setCategoryData] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredTopics, setFilteredTopics] = useState([]);
   const isFocused = useIsFocused();
+  const [openMenuId, setOpenMenuId] = useState(null)
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -56,6 +58,30 @@ const CategoryContent = ({ route, navigation }) => {
     }
   }, [topics, searchQuery]);
 
+  
+  const handleDeleteTopic = (topicId) => {
+    Alert.alert(
+      "Delete Topic",
+      "Are you sure you want to delete this topic?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          onPress: async () => {
+            await deleteTopic(topicId)
+            await fetchTopicsByCategory(Number.parseInt(id))
+            setOpenMenuId(null)
+          },
+        },
+      ],
+      { cancelable: false },
+    )
+  }
+
+
   // Helper function to get time-based sections
   const getTopicSections = () => {
     const now = new Date();
@@ -83,38 +109,43 @@ const CategoryContent = ({ route, navigation }) => {
 
   const { todayTopics, yesterdayTopics, olderTopics } = getTopicSections();
 
+  
   const renderTopicCard = (topic) => (
     <TouchableOpacity
       key={topic.id}
-      style={[
-        styles.flashcardCard,
-        { backgroundColor: categoryData?.color || '#F09E54' }
-      ]}
-      onPress={() => navigation.navigate('FlashcardDetail', { id: topic.id })}
+      style={[styles.flashcardCard, { backgroundColor: categoryData?.color || "#F09E54" }]}
+      onPress={() => navigation.navigate("FlashcardDetail", { id: topic.id })}
     >
       <View style={styles.cardHeader}>
         <View style={styles.iconContainer}>
           <MaterialCommunityIcons name="book-open-page-variant" size={24} style={styles.cardIcon} color="white" />
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => setOpenMenuId(openMenuId === topic.id ? null : topic.id)}>
           <Feather name="more-vertical" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
       <Text style={styles.cardTitle}>{topic.title}</Text>
       <Text style={styles.cardSubtitle} numberOfLines={2}>
-        {topic.description || 'No description available'}
+        {topic.description || "No description available"}
       </Text>
       <View style={styles.cardFooter}>
         <Text style={styles.cardCount}>{topic.card_count} Cards</Text>
-        <Text style={styles.cardDuration}>
-          {Math.ceil(topic.card_count * 0.5)}min
-        </Text>
+        <Text style={styles.cardDuration}>{Math.ceil(topic.card_count * 0.5)}min</Text>
       </View>
       <View style={styles.progressContainer}>
-        <View style={[styles.progressBar, { width: '0%' }]} />
+        <View style={[styles.progressBar, { width: "0%" }]} />
       </View>
+      {openMenuId === topic.id && (
+        <View style={styles.menuContainer}>
+          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteTopic(topic.id)}>
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </TouchableOpacity>
-  );
+  )
+
+
 
   const renderSection = (sectionTitle, sectionTopics) => {
     if (sectionTopics.length === 0) return null;
@@ -345,6 +376,26 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+   menuContainer: {
+    position: "absolute",
+    top: 40,
+    right: 15,
+    backgroundColor: "transparent",
+    padding: 8,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  deleteButton: {
+    backgroundColor: "#E53935",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });
 

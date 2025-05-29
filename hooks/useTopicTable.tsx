@@ -85,11 +85,15 @@ export function useTopicTable(user_id: number) {
       .catch(err => console.error('Touch error:', err));
   };
 
-  const deleteTopic = (id: number) => {
-    db.runAsync('DELETE FROM topic WHERE id = ?;', [id])
-      .then(fetchTopics)
-      .catch(err => console.error('Delete error:', err));
-  };
+  const deleteTopic = async (id: number) => {
+    try {
+      await db.runAsync("DELETE FROM topic WHERE id = ?;", [id])
+      console.log("Topic deleted successfully")
+    } catch (err) {
+      console.error("Delete error:", err)
+      throw err
+    }
+  }
 
   const fetchTopicsByCategory = (categoryId: number) => {
     setLoading(true);

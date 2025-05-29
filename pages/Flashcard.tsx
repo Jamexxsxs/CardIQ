@@ -60,7 +60,6 @@ const Flashcard: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Create New Flashcard</Text>
       <View style={styles.content}>
-        <Text>Flashcard creation form will go here</Text>
       </View>
 
       <FlashcardModal visible={flashcardModalVisible} onClose={handleCloseModal} onSelectOption={handleSelectOption} />

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useContext, useEffect, useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
 import { Feather } from "@expo/vector-icons"
 import { useTopicTable } from "../../hooks/useTopicTable"
 import { AuthContext } from "../../App"
@@ -31,9 +31,29 @@ const formatDate = (dateString: string) => {
 interface ActivityCardProps {
   activity: Activity
   onPress?: () => void
+  openMenuId: string | null
+  setOpenMenuId: (id: string | null) => void
+  onDelete: (id: string | number) => void
 }
 
-const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onPress }) => {
+
+const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onPress, openMenuId, setOpenMenuId, onDelete }) => {
+  const isMenuOpen = openMenuId === activity.id.toString()
+
+  const handleDeletePress = () => {
+    Alert.alert("Delete Flashcard", `Are you sure you want to delete "${activity.chapter}"?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          onDelete(activity.id)
+          setOpenMenuId(null)
+        },
+      },
+    ])
+  }
+
   return (
     <TouchableOpacity
       style={[styles.container, { backgroundColor: activity.color }]}
@@ -43,9 +63,24 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onPress }) => {
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <Text style={styles.subject}>{activity.subject}</Text>
-          <TouchableOpacity style={styles.menuButton}>
+           <TouchableOpacity
+            style={styles.menuButton}
+            onPress={(e) => {
+              e.stopPropagation()
+              setOpenMenuId(isMenuOpen ? null : activity.id.toString())
+            }}
+          >
             <Feather name="more-vertical" size={20} color="#fff" />
           </TouchableOpacity>
+
+                    {isMenuOpen && (
+            <View style={styles.menuContainer}>
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
+                <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={styles.decorativeShape} />
         </View>
         <Text style={styles.chapter}>{activity.chapter}</Text>
@@ -66,39 +101,50 @@ interface RecentlyAddedSectionProps {
 const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({ refreshKey }) => {
   const navigation = useNavigation()
   const { userId } = useContext(AuthContext)
-  const { getRecentlyAdded } = useTopicTable(userId)
+  const { getRecentlyAdded, deleteTopic} = useTopicTable(userId)
   const [recentlyAdded, setRecentlyAdded] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+
+  
+  const fetchRecentlyAdded = async () => {
+    try {
+      setLoading(true)
+      const activities = await getRecentlyAdded()
+
+      console.log("Recently added:", activities)
+
+      // Map database results to Activity interface
+      const mappedActivities: Activity[] = activities.map((item) => ({
+        id: item.id || Math.random().toString(),
+        subject: item.category_name || "Uncategorized",
+        chapter: item.title || "No title",
+        cardCount: item.card_count || 0,
+        date: formatDate(item.added_datetime),
+        color: item.color || "#8F98FF",
+      }))
+
+      setRecentlyAdded(mappedActivities)
+    } catch (error) {
+      console.error("Error fetching recently added:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     console.log("RecentlyAddedSection rendering with userId:", userId, "refreshKey:", refreshKey)
-    const fetchRecentlyAdded = async () => {
-      try {
-        setLoading(true)
-        const activities = await getRecentlyAdded()
-
-        console.log("Recently added:", activities)
-
-        // Map database results to Activity interface
-        const mappedActivities: Activity[] = activities.map((item) => ({
-          id: item.id || Math.random().toString(),
-          subject: item.category_name || "Uncategorized",
-          chapter: item.title || "No title",
-          cardCount: item.card_count || 0,
-          date: formatDate(item.added_datetime),
-          color: item.color || "#8F98FF",
-        }))
-
-        setRecentlyAdded(mappedActivities)
-      } catch (error) {
-        console.error("Error fetching recently added:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchRecentlyAdded()
   }, [refreshKey])
+
+  const handleDeleteTopic = async (id: string | number) => {
+    try {
+      await deleteTopic(Number(id))
+      await fetchRecentlyAdded()
+    } catch (error) {
+      console.error("Error deleting topic:", error)
+    }
+  }
 
   if (recentlyAdded.length === 0) {
     return (
@@ -118,6 +164,9 @@ const RecentlyAddedSection: React.FC<RecentlyAddedSectionProps> = ({ refreshKey 
             key={activity.id}
             activity={activity}
             onPress={() => navigation.navigate("FlashcardDetail", { id: activity.id })}
+            openMenuId={openMenuId}
+            setOpenMenuId={setOpenMenuId}
+            onDelete={handleDeleteTopic}
           />
         ))}
       </View>
@@ -209,6 +258,26 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#666",
     fontSize: 16,
+  },
+  menuContainer: {
+    position: "absolute",
+    top: 20,
+    right: 8,
+    backgroundColor: "transparent",
+    padding: 8,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  deleteButton: {
+    backgroundColor: "#E53935",
+    paddingVertical: 9,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 18,
   },
 })
 

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useContext, useEffect, useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useTopicTable } from "../../hooks/useTopicTable"
 import { AuthContext } from "../../App"
@@ -31,9 +31,28 @@ const formatDate = (dateString: string) => {
 interface ActivityCardProps {
   activity: Activity
   onPress?: () => void
+  openMenuId: string | null
+  setOpenMenuId: (id: string | null) => void
+  onDelete: (id: string | number) => void
 }
 
-const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onPress }) => {
+const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onPress, openMenuId, setOpenMenuId, onDelete }) => {
+  const isMenuOpen = openMenuId === activity.id.toString()
+
+  const handleDeletePress = () => {
+    Alert.alert("Delete Flashcard", `Are you sure you want to delete "${activity.chapter}"?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          onDelete(activity.id)
+          setOpenMenuId(null)
+        },
+      },
+    ])
+  }
+
   return (
     <TouchableOpacity style={[styles.activityCard, { backgroundColor: activity.color }]} onPress={onPress}>
       <View style={styles.cardContent}>
@@ -46,9 +65,24 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onPress }) => {
             <Text style={styles.date}>{activity.date}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.menuButton}>
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={(e) => {
+            e.stopPropagation()
+            setOpenMenuId(isMenuOpen ? null : activity.id.toString())
+          }}
+        >
           <Ionicons name="ellipsis-vertical" size={20} color="white" />
         </TouchableOpacity>
+
+        {isMenuOpen && (
+          <View style={styles.menuContainer}>
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.decorativeShape} />
       </View>
     </TouchableOpacity>
@@ -60,11 +94,12 @@ interface RecentActivitySectionProps {
 }
 
 const RecentActivitySection: React.FC<RecentActivitySectionProps> = ({ refreshKey }) => {
-    const navigation = useNavigation()
+  const navigation = useNavigation()
   const { userId } = useContext(AuthContext)
-  const { getRecentActivity, refresh } = useTopicTable(userId)
+  const { getRecentActivity, deleteTopic, refresh } = useTopicTable(userId)
   const [recentActivities, setRecentActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchRecentActivities = async () => {
@@ -74,7 +109,6 @@ const RecentActivitySection: React.FC<RecentActivitySectionProps> = ({ refreshKe
 
         console.log(activities)
 
-        // Map database results to Activity interface
         const mappedActivities: Activity[] = activities.map((item) => ({
           id: item.id || Math.random().toString(),
           subject: item.category_name || "Uncategorized",
@@ -94,6 +128,24 @@ const RecentActivitySection: React.FC<RecentActivitySectionProps> = ({ refreshKe
 
     fetchRecentActivities()
   }, [userId, refreshKey])
+
+  const handleDeleteTopic = async (id: string | number) => {
+    try {
+      await deleteTopic(Number(id))
+      const activities = await getRecentActivity()
+      const mappedActivities: Activity[] = activities.map((item) => ({
+        id: item.id || Math.random().toString(),
+        subject: item.category_name || "Uncategorized",
+        chapter: item.title || "No title",
+        cardCount: item.card_count || 0,
+        date: formatDate(item.activity_datetime),
+        color: item.color || "#8F98FF",
+      }))
+      setRecentActivities(mappedActivities)
+    } catch (error) {
+      console.error("Error deleting topic:", error)
+    }
+  }
 
   if (loading) {
     return (
@@ -125,7 +177,10 @@ const RecentActivitySection: React.FC<RecentActivitySectionProps> = ({ refreshKe
           <ActivityCard
             key={activity.id}
             activity={activity}
-            onPress={() => navigation.navigate('FlashcardDetail', { id: activity.id })}
+            onPress={() => navigation.navigate("FlashcardDetail", { id: activity.id })}
+            openMenuId={openMenuId}
+            setOpenMenuId={setOpenMenuId}
+            onDelete={handleDeleteTopic}
           />
         ))}
       </View>
@@ -214,6 +269,26 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#666",
     fontSize: 16,
+  },
+  menuContainer: {
+    position: "absolute",
+    top: 14,
+    right: 5,
+    backgroundColor: "transparent",
+    padding: 8,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  deleteButton: {
+    backgroundColor: "#E53935",
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 18,
   },
 })
 

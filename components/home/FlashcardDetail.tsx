@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTopicTable } from '../../hooks/useTopicTable';
@@ -9,13 +9,14 @@ import { AuthContext } from '../../App';
 const FlashcardDetail = ({ route, navigation }) => {
   const { id } = route.params;
   const { userId } = useContext(AuthContext);
-  const { getSpecificTopic, fetchTopicsByCategory, topics, touchTopic } = useTopicTable(userId);
+  const { getSpecificTopic, fetchTopicsByCategory, topics, touchTopic, deleteTopic } = useTopicTable(userId);
   const { getSpecificCategory } = useCategoryTable(userId);
   
   const [topic, setTopic] = useState(null);
   const [category, setCategory] = useState(null);
   const [relatedTopics, setRelatedTopics] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [openMenuId, setOpenMenuId] = useState(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,6 +51,31 @@ const FlashcardDetail = ({ route, navigation }) => {
     }
   }, [topics, topic]);
 
+  
+  const handleDeleteTopic = (topicId, topicTitle) => {
+    Alert.alert("Delete Flashcard", `Are you sure you want to delete "${topicTitle}"?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteTopic(topicId)
+            setOpenMenuId(null)
+            if (topicId === topic.id) {
+              navigation.goBack()
+            } else {
+              await fetchTopicsByCategory(topic.category_id)
+            }
+          } catch (error) {
+            console.error("Error deleting topic:", error)
+          }
+        },
+      },
+    ])
+  }
+
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -79,47 +105,44 @@ const FlashcardDetail = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header Section with colored background */}
         <View style={[styles.headerSection, { backgroundColor: category?.color || '#F09E54' }]}>
-          {/* Decorative circle */}
           <View style={styles.decorativeCircle} />
-          
-          {/* Header controls */}
-          <View style={styles.headerControls}>
+            <View style={styles.headerControls}>
             <TouchableOpacity 
               onPress={() => navigation.goBack()} 
               style={styles.backButtonCircle}
             >
-              <Feather name="arrow-left" size={20} color="#666" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuButton}>
-              <Feather name="more-vertical" size={20} color="#fff" />
-            </TouchableOpacity>
+                <Feather name="arrow-left" size={20} color="#666" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuButton} onPress={() => setOpenMenuId(topic.id)}>
+                <Feather name="more-vertical" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>{topic.title}</Text>
+            </View>
+            {openMenuId === topic.id && (
+              <View style={styles.menuContainer}>
+                <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteTopic(topic.id, topic.title)}>
+                  <Text style={styles.deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            )}   
           </View>
-
-          {/* Title */}
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>{topic.title}</Text>
-          </View>
-        </View>
-
-        {/* Content Section */}
-        <View style={styles.contentSection}>
+            <View style={styles.contentSection}>
           <Text style={styles.subtitle}>
-            {topic.card_count} Cards • {category?.name?.toUpperCase() || 'CATEGORY'}
-          </Text>
-          
-          <Text style={styles.description}>
-            {topic.description || 'No description available for this topic.'}
+            {topic.card_count} Cards • {category?.name?.toUpperCase() || "CATEGORY"}
           </Text>
 
-          <TouchableOpacity 
+          <Text style={styles.description}>{topic.description || "No description available for this topic."}</Text>
+
+          <TouchableOpacity
             style={styles.startButton}
             onPress={async () => {
               try {
                 const updatedTopics = await touchTopic(id);
                 navigation.navigate('CardFlow', { 
-                  topicId: topic.id, 
+                  topicId: topic.id,
                   topicTitle: topic.title,
                   categoryId: topic.category_id 
                 });
@@ -131,13 +154,12 @@ const FlashcardDetail = ({ route, navigation }) => {
             <Text style={styles.startButtonText}>START</Text>
           </TouchableOpacity>
 
-          {/* Related Section */}
           {relatedTopics.length > 0 && (
             <View style={styles.relatedSection}>
               <Text style={styles.relatedTitle}>Related</Text>
               <View style={styles.relatedCards}>
                 {relatedTopics.map((relatedTopic) => (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     key={relatedTopic.id}
                     style={[
                       styles.relatedCard,
@@ -145,17 +167,24 @@ const FlashcardDetail = ({ route, navigation }) => {
                     ]}
                     onPress={() => navigation.replace('FlashcardDetail', { id: relatedTopic.id.toString() })}
                   >
-                    {/* Decorative circle for related cards */}
                     <View style={styles.relatedCardCircle} />
-                    
-                    {/* Menu button */}
-                    <TouchableOpacity style={styles.relatedCardMenu}>
+
+                    <TouchableOpacity style={styles.relatedCardMenu} onPress={() => setOpenMenuId(relatedTopic.id)}>
                       <Feather name="more-vertical" size={16} color="#fff" />
                     </TouchableOpacity>
-                    
-                    <Text style={styles.relatedCardTitle}>
-                      {relatedTopic.title}
-                    </Text>
+
+                    {openMenuId === relatedTopic.id && (
+                      <View style={styles.menuContainer}>
+                        <TouchableOpacity
+                          style={styles.deleteButton}
+                          onPress={() => handleDeleteTopic(relatedTopic.id, relatedTopic.title)}
+                        >
+                          <Text style={styles.deleteButtonText}>Delete</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    <Text style={styles.relatedCardTitle}>{relatedTopic.title}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -232,6 +261,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontWeight: '500',
   },
+  relatedSection: {
+    marginTop: 20,
+  },
   description: {
     fontSize: 16,
     color: '#333',
@@ -252,9 +284,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1,
   },
-  relatedSection: {
-    marginTop: 20,
-  },
   relatedTitle: {
     fontSize: 24,
     fontWeight: '600',
@@ -267,7 +296,7 @@ const styles = StyleSheet.create({
   },
   relatedCard: {
     width: 140,
-    height: 100,
+    height: 140,
     borderRadius: 16,
     padding: 12,
     position: 'relative',
@@ -278,8 +307,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -15,
     right: -15,
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
     borderRadius: 25,
     backgroundColor: 'rgba(0, 0, 0, 0.15)',
   },
@@ -328,6 +357,35 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+   menuContainer: {
+    position: "absolute",
+    top: 30,
+    right: 10,
+    backgroundColor: "transparent",
+    padding: 8,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  relatedMenuContainer: {
+    position: "absolute",
+    top: 30,
+    right: 5,
+    backgroundColor: "transparent",
+    padding: 4,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  deleteButton: {
+    backgroundColor: "#E53935",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
 
