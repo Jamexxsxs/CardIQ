@@ -1,6 +1,6 @@
 "use client"
 
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useState, useCallback } from "react"
 import {
   View,
   Text,
@@ -13,7 +13,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
 } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { Feather, AntDesign } from "@expo/vector-icons"
@@ -21,6 +20,7 @@ import { useCardTable } from "../../hooks/useCardTable"
 import { useCategoryTable } from "../../hooks/useCategoryTable"
 import { useTopicTable } from "../../hooks/useTopicTable"
 import { AuthContext } from "../../App"
+import { useFocusEffect } from "@react-navigation/native"
 
 const { width } = Dimensions.get("window")
 
@@ -56,6 +56,7 @@ const CardFlow = ({ route, navigation }) => {
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null)
   // Store feedback data for each card
   const [cardFeedbackData, setCardFeedbackData] = useState<FeedbackData>({})
+  const [isCompletingNormally, setIsCompletingNormally] = useState(false)
 
   // Animation values
   const [flipAnimation] = useState(new Animated.Value(0))
@@ -135,6 +136,19 @@ const CardFlow = ({ route, navigation }) => {
 
     loadData()
   }, [topicId])
+
+  // Handle navigation away from screen - clear storage if not completing normally
+  useFocusEffect(
+    useCallback(() => {
+      // This runs when screen comes into focus
+      return () => {
+        // This runs when screen loses focus (user navigates away)
+        if (!isCompletingNormally) {
+          clearStoredData()
+        }
+      }
+    }, [isCompletingNormally]),
+  )
 
   // Update feedback message when card changes
   useEffect(() => {
@@ -254,7 +268,6 @@ const CardFlow = ({ route, navigation }) => {
     })
   }
 
-  
   const handleRevealOrNext = () => {
     if (!isCurrentCardRevealed) {
       flipCard()
@@ -270,6 +283,12 @@ const CardFlow = ({ route, navigation }) => {
       setShowAnswer(false)
       flipAnimation.setValue(0)
     } else {
+      // Set flag to indicate normal completion
+      setIsCompletingNormally(true)
+
+      // Clear storage immediately after completion
+      clearStoredData()
+
       navigation.navigate("CompleteCard", {
         topicId,
         topicTitle,
@@ -371,9 +390,7 @@ const CardFlow = ({ route, navigation }) => {
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={async () => {
-                // Clear stored data when going back
-                await clearStoredData()
+              onPress={() => {
                 navigation.goBack()
               }}
             >
@@ -382,7 +399,9 @@ const CardFlow = ({ route, navigation }) => {
           </View>
 
           {/* Title */}
-          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{topicTitle}</Text>
+          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+            {topicTitle}
+          </Text>
 
           {/* Progress Section */}
           <View style={styles.progressSection}>
@@ -431,7 +450,7 @@ const CardFlow = ({ route, navigation }) => {
                 onChangeText={setUserAnswer}
               />
             )}
-             {isCurrentCardRevealed && (
+            {isCurrentCardRevealed && (
               <TouchableOpacity style={styles.revealButton} onPress={flipCard}>
                 <AntDesign name="heart" size={20} color={showAnswer ? categoryColor : "#999"} />
                 <Text style={[styles.revealText, { color: showAnswer ? categoryColor : "#999" }]}>
@@ -455,7 +474,6 @@ const CardFlow = ({ route, navigation }) => {
                   },
                 ]}
               >
-                
                 <View style={styles.feedbackContent}>
                   <View style={styles.feedbackHeader}>
                     {isAnswerCorrect === true && <Feather name="check-circle" size={20} color="#4CAF50" />}
@@ -478,7 +496,7 @@ const CardFlow = ({ route, navigation }) => {
           )}
 
           {/* Navigation Buttons */}
-            <View style={styles.navigationButtons}>
+          <View style={styles.navigationButtons}>
             <TouchableOpacity
               style={[styles.navButton, styles.prevButton, { opacity: currentCardIndex === 0 ? 0.5 : 1 }]}
               onPress={handlePrevious}
@@ -501,7 +519,6 @@ const CardFlow = ({ route, navigation }) => {
     </SafeAreaView>
   )
 }
-
 
 const styles = StyleSheet.create({
   container: {
