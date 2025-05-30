@@ -18,6 +18,7 @@ export default ({ config }) => {
         ios: {
             ...config.ios,
             icon: iconExists ? './assets/app-icon.png' : config.ios?.icon,
+            bundleIdentifier: 'com.yourcompany.CardIQ',
             buildNumber: '1', 
         },
         extra: {
