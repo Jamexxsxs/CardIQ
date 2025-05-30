@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import {API_KEY} from '@env';
+import Constants from 'expo-constants';
 import * as SQLite from 'expo-sqlite';
 import axios from 'axios';
 import { useTopicTable } from './useTopicTable';
@@ -7,6 +7,7 @@ import { useTopicTable } from './useTopicTable';
 const db = SQLite.openDatabaseSync('cardIQ.db');
 
 export function useCardTable(user_id: number) {
+  const { API_KEY } = Constants.expoConfig?.extra || {};
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

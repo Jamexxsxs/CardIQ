@@ -19,13 +19,14 @@ import * as DocumentPicker from "expo-document-picker"
 import { useCategoryTable } from "../../hooks/useCategoryTable"
 import { useCardTable } from "../../hooks/useCardTable"
 import { AuthContext } from "../../App"
-import { PDFCO_API_KEY } from "@env"
+import Constants from 'expo-constants';
 
 const ImportFile: React.FC = () => {
   const navigation = useNavigation()
   const { userId } = useContext(AuthContext)
   const { refresh } = useCategoryTable(userId)
   const { generateCardsFromPDF } = useCardTable(userId)
+  const { PDFCO_API_KEY } = Constants.expoConfig?.extra || {};
 
   const [selectedFile, setSelectedFile] = useState<any>(null)
   const [uploadedFileUrl, setUploadedFileUrl] = useState("")
