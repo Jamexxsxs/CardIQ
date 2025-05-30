@@ -25,6 +25,7 @@ import GeneratePrompt from "./components/flashcard/GeneratePrompt"
 import ImportFile from "./components/flashcard/ImportFile"
 import CardFlow from "./components/home/CardFlow"
 import CompleteCard from "./components/home/CompleteCard"
+import Welcome from "./pages/Welcome"
 
 type RootTabParamList = {
   HomeStack: undefined
@@ -60,6 +61,7 @@ type ProfileStackParamList = {
 }
 
 type AuthStackParamList = {
+  Welcome: undefined
   Login: undefined
   SignUp: undefined
   Onboarding: { userId: number }
@@ -117,6 +119,7 @@ function ProfileStackScreen() {
 function AuthStackScreen() {
   return (
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStack.Screen name="Welcome" component={Welcome} />
       <AuthStack.Screen name="Login" component={Login} />
       <AuthStack.Screen name="SignUp" component={SignUp} />
       <AuthStack.Screen name="Onboarding" component={OnboardingScreen} />

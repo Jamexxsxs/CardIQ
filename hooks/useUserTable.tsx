@@ -35,9 +35,13 @@ export function useUserTable() {
         [username, email, password]
       );
 
-      return result.lastInsertRowId;
-    } catch (err) {
-      console.error('Add user error:', err);
+      return { success: true, userId: result.lastInsertRowId };
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err?.message || 'Unknown error',
+        code: err?.code || null,
+      };
     }
   };
 

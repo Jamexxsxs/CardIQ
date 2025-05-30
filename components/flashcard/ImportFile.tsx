@@ -303,7 +303,7 @@ const ImportFile: React.FC = () => {
           onPress={handleGenerateFlashcards}
           disabled={!uploadedFileUrl || !category || isUploading || isProcessing}
         >
-          <Text style={styles.saveButtonText}>{isProcessing ? "Processing..." : "Generate Flashcards"}</Text>
+          <Text style={styles.saveButtonText}>{isProcessing ? "Generating..." : "Generate Flashcards"}</Text>
         </TouchableOpacity>
       </ScrollView>
 

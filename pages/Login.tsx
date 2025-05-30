@@ -84,10 +84,6 @@ const Login = () => {
             </TouchableOpacity>
           </View>
           
-          <TouchableOpacity>
-            <Text style={styles.forgotPassword}>Forgot password? <Text style={styles.clickHere}>Click here</Text></Text>
-          </TouchableOpacity>
-          
           <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
             <Text style={styles.loginButtonText}>Log in</Text>
           </TouchableOpacity>

@@ -92,7 +92,6 @@ export function useCategoryTable(user_id: number) {
       );
 
       if (existing.length > 0) {
-        console.warn('Category with the same name already exists for this user.');
         Alert.alert('Duplicate Category', 'You already have a category with this name.');
         return;
       }

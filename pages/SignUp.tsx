@@ -1,148 +1,254 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { AuthContext } from '../App'; 
-import { useUserTable } from '../hooks/useUserTable'
+"use client"
+
+import { useState, useContext } from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  ScrollView,
+} from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { Feather } from "@expo/vector-icons"
+import { useNavigation } from "@react-navigation/native"
+import type { StackNavigationProp } from "@react-navigation/stack"
+import { AuthContext } from "../App"
+import { useUserTable } from "../hooks/useUserTable"
+import { validateEmail, validatePassword, validateName } from "../utils/authValidation"
+import PasswordStrengthIndicator from "../components/auth/PasswordStrength"
 
 type AuthStackParamList = {
-  Welcome: undefined;
-  Login: undefined;
-  SignUp: undefined;
-  Onboarding: { userId: number };
-};
+  Welcome: undefined
+  Login: undefined
+  SignUp: undefined
+  Onboarding: { userId: number }
+}
 
-type SignUpScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'SignUp'>;
+type SignUpScreenNavigationProp = StackNavigationProp<AuthStackParamList, "SignUp">
 
 const SignUp = () => {
-  const { addUser } = useUserTable();
+  const { addUser } = useUserTable()
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const navigation = useNavigation<SignUpScreenNavigationProp>();
-  const { login } = useContext(AuthContext); 
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Validation states
+  const [nameError, setNameError] = useState("")
+  const [emailError, setEmailError] = useState("")
+  const [showPasswordStrength, setShowPasswordStrength] = useState(false)
+
+  const navigation = useNavigation<SignUpScreenNavigationProp>()
+  const { login } = useContext(AuthContext)
+
+  // Real-time validation
+  const nameValidation = validateName(name)
+  const emailValidation = validateEmail(email)
+  const passwordValidation = validatePassword(password)
+
+  const handleNameChange = (text: string) => {
+    setName(text)
+    if (text && !validateName(text).isValid) {
+      setNameError(validateName(text).message)
+    } else {
+      setNameError("")
+    }
+  }
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text)
+    if (text && !validateEmail(text).isValid) {
+      setEmailError(validateEmail(text).message)
+    } else {
+      setEmailError("")
+    }
+  }
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text)
+    setShowPasswordStrength(text.length > 0)
+  }
 
   const handleSignUp = async () => {
-    if (!name || !email || !password) {
-      alert('Please fill in all fields.');
-      return;
+    const nameVal = validateName(name)
+    const emailVal = validateEmail(email)
+    const passwordVal = validatePassword(password)
+
+    if (!nameVal.isValid) {
+      Alert.alert("Invalid Name", nameVal.message)
+      return
+    }
+
+    if (!emailVal.isValid) {
+      Alert.alert("Invalid Email", emailVal.message)
+      return
+    }
+
+    if (!passwordVal.isValid) {
+      Alert.alert(
+        "Weak Password",
+        `Please ensure your password meets all requirements:\n• ${passwordVal.errors.join("\n• ")}`
+      )
+      return
     }
 
     try {
-      const userId = await addUser(name, email, password);
-      console.log(userId)
-      if (userId) {
-        // login(userId, rememberMe); 
-        navigation.navigate('Onboarding', { userId });
+      setIsLoading(true)
+
+      const result = await addUser(name, email, password)
+
+      if (result.success) {
+        if (rememberMe) {
+          await login(result.userId, true)
+        }
+        navigation.navigate("Onboarding", { userId: result.userId })
+      } else {
+        // Handle specific error codes (like unique constraint)
+        if (result.error.includes("UNIQUE")) {
+          Alert.alert("Account Exists", "A user with that email already exists.")
+        } else {
+          Alert.alert("Sign Up Failed", result.error)
+        }
       }
     } catch (error) {
-      console.error('Sign up failed:', error);
-      alert('Something went wrong. Please try again.');
+      Alert.alert("Sign Up Failed", "Something went wrong. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
+
+  const isFormValid = nameValidation.isValid && emailValidation.isValid && passwordValidation.isValid
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidView}
-      >
-        <View style={styles.content}>
-          <Image 
-            source={require("../assets/logo.png")}
-            style={styles.logo} 
-          />
-          
-          <Text style={styles.title}>Create an account</Text>
-          
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Steve Brown"
-              placeholderTextColor="#999"
-              value={name}
-              onChangeText={setName}
-            />
-            <Feather name="user" size={20} color="#999" style={styles.inputIcon} />
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="steve.brown@gmail.com"
-              placeholderTextColor="#999"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <Feather name="mail" size={20} color="#999" style={styles.inputIcon} />
-          </View>
-          
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="* * * * * *"
-              placeholderTextColor="#999"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Feather 
-                name={showPassword ? "eye" : "eye-off"} 
-                size={20} 
-                color="#999" 
-                style={styles.inputIcon} 
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoidView}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.content}>
+            <Image source={require("../assets/logo.png")} style={styles.logo} />
+
+            <Text style={styles.title}>Create an account</Text>
+
+            {/* Name Input */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.input, nameError && styles.inputError]}
+                placeholder="Steve Brown"
+                placeholderTextColor="#999"
+                value={name}
+                onChangeText={handleNameChange}
+                editable={!isLoading}
               />
-            </TouchableOpacity>
-          </View>
-          
-          <TouchableOpacity 
-            style={styles.rememberMeContainer}
-            onPress={() => setRememberMe(!rememberMe)}
-          >
-            <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-              {rememberMe && <Feather name="check" size={14} color="#FFFFFF" />}
+              <Feather
+                name="user"
+                size={20}
+                color={name && nameValidation.isValid ? "#34C759" : nameError ? "#FF3B30" : "#999"}
+                style={styles.inputIcon}
+              />
             </View>
-            <Text style={styles.rememberMeText}>Remember me</Text>
-          </TouchableOpacity>
-          
-          
-          <TouchableOpacity style={styles.signupButton} onPress={handleSignUp}>
-            <Text style={styles.signupButtonText}>Sign up</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>Log In</Text>
+            {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
+
+            {/* Email Input */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.input, emailError && styles.inputError]}
+                placeholder="steve.brown@gmail.com"
+                placeholderTextColor="#999"
+                value={email}
+                onChangeText={handleEmailChange}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!isLoading}
+              />
+              <Feather
+                name="mail"
+                size={20}
+                color={email && emailValidation.isValid ? "#34C759" : emailError ? "#FF3B30" : "#999"}
+                style={styles.inputIcon}
+              />
+            </View>
+            {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+
+            {/* Password Input */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Create a strong password"
+                placeholderTextColor="#999"
+                value={password}
+                onChangeText={handlePasswordChange}
+                secureTextEntry={!showPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} disabled={isLoading}>
+                <Feather
+                  name={showPassword ? "eye" : "eye-off"}
+                  size={20}
+                  color={password && passwordValidation.isValid ? "#34C759" : "#999"}
+                  style={styles.inputIcon}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Password Strength Indicator */}
+            {showPasswordStrength && <PasswordStrengthIndicator password={password} validation={passwordValidation} />}
+
+            <TouchableOpacity
+              style={styles.rememberMeContainer}
+              onPress={() => setRememberMe(!rememberMe)}
+              disabled={isLoading}
+            >
+              <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                {rememberMe && <Feather name="check" size={14} color="#FFFFFF" />}
+              </View>
+              <Text style={styles.rememberMeText}>Remember me</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.signupButton, (!isFormValid || isLoading) && styles.signupButtonDisabled]}
+              onPress={handleSignUp}
+              disabled={!isFormValid || isLoading}
+            >
+              <Text style={styles.signupButtonText}>{isLoading ? "Creating account..." : "Sign up"}</Text>
+            </TouchableOpacity>
+
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Login")} disabled={isLoading}>
+                <Text style={styles.loginLink}>Log In</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   keyboardAvoidView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 24,
+    paddingVertical: 20,
   },
   logo: {
     width: 180,
@@ -152,87 +258,93 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#4A86E8',
+    fontWeight: "bold",
+    color: "#4A86E8",
     marginBottom: 32,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 8,
     paddingHorizontal: 16,
-    width: '100%',
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "transparent",
   },
   input: {
     flex: 1,
     height: 50,
     fontSize: 16,
-    color: '#333',
+    color: "#333",
+  },
+  inputError: {
+    borderColor: "#FF3B30",
   },
   inputIcon: {
     marginLeft: 8,
   },
-  rememberMeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+  errorText: {
+    color: "#FF3B30",
+    fontSize: 12,
+    alignSelf: "flex-start",
     marginBottom: 16,
+    marginLeft: 4,
+  },
+  rememberMeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    marginBottom: 24,
   },
   checkbox: {
     width: 20,
     height: 20,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#4A86E8',
+    borderColor: "#4A86E8",
     marginRight: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkboxChecked: {
-    backgroundColor: '#4A86E8',
+    backgroundColor: "#4A86E8",
   },
   rememberMeText: {
     fontSize: 14,
-    color: '#666',
-  },
-  termsText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  termsLink: {
-    color: '#4A86E8',
+    color: "#666",
   },
   signupButton: {
-    backgroundColor: '#4A86E8',
+    backgroundColor: "#4A86E8",
     borderRadius: 12,
     height: 50,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 24,
   },
+  signupButtonDisabled: {
+    opacity: 0.5,
+  },
   signupButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   loginContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 16,
   },
   loginText: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   loginLink: {
     fontSize: 14,
-    color: '#4A86E8',
-    fontWeight: '600',
+    color: "#4A86E8",
+    fontWeight: "600",
   },
-});
+})
 
-export default SignUp;
+export default SignUp

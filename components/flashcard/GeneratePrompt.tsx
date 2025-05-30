@@ -32,18 +32,28 @@ const GeneratePrompt: React.FC = () => {
   }, []);
 
   const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      alert("Please enter a prompt.");
+      return;
+    }
+
+    if (!category) {
+      alert("Please select a category.");
+      return;
+    }
+
     try {
       setIsGenerating(true);
-      console.log("Generating flashcards:", { prompt, category, cardCount })
-      const {topic_id} = await generateCardsFromPrompt(prompt, category as any, cardCount);
-      navigation.navigate('FlashcardDetail', { id: topic_id })
+      console.log("Generating flashcards:", { prompt, category, cardCount });
+      const { topic_id } = await generateCardsFromPrompt(prompt, category as any, cardCount);
+      navigation.navigate("FlashcardDetail", { id: topic_id });
     } catch (error) {
       console.error("Error generating flashcards:", error);
-      // You might want to show an error message to the user here
+      alert("Failed to generate flashcards. Please try again.");
     } finally {
       setIsGenerating(false);
     }
-  }
+  };
 
   return (
     <>
@@ -126,12 +136,12 @@ const GeneratePrompt: React.FC = () => {
         </View>
 
         <TouchableOpacity 
-          style={[styles.generateButton, isGenerating && styles.generateButtonDisabled]} 
+          style={[styles.generateButton, (isGenerating || !prompt.trim() || !category) && styles.generateButtonDisabled]} 
           onPress={handleGenerate}
-          disabled={isGenerating}
+          disabled={isGenerating || !prompt.trim() || !category}
         >
           <Text style={styles.generateButtonText}>
-            {isGenerating ? "Generating..." : "Generate"}
+            {isGenerating ? "Generating..." : "Generate Flashcards"}
           </Text>
         </TouchableOpacity>
       </ScrollView>
