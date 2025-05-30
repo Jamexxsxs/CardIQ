@@ -96,28 +96,6 @@ const Profile = () => {
             <Image source={require("../assets/logo.png")} style={styles.profileImage} />
           </View>
           <Text style={styles.username}>{currentUser?.username || "User"}</Text>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => {
-              Alert.alert(
-                "Reset Database",
-                "Are you sure you want to reset the database? This action cannot be undone.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Reset",
-                    style: "destructive",
-                    onPress: async () => {
-                      await resetDatabase()
-                      Alert.alert("Database has been reset.")
-                    },
-                  },
-                ],
-              )
-            }}
-          >
-            <Feather name="trash-2" size={20} color="#FF3B30" />
-          </TouchableOpacity>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
