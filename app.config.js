@@ -1,3 +1,6 @@
+import path from 'path';
+import fs from 'fs';
+
 export default ({ config }) => {
     const iconPath = path.resolve(__dirname, './assets/app-icon.png');
 
