@@ -1,12 +1,14 @@
 export default ({ config }) => {
-    const isPreview = process.env.ENV_NAME === 'preview';
+    const iconPath = path.resolve(__dirname, './assets/app-icon.png');
+
+    const iconExists = fs.existsSync(iconPath);
     return {
         ...config,
-        name: isPreview ? 'CardIQ' : config.name,
-        slug: isPreview ? 'cardiq-preview' : config.slug,
+        name: 'CardIQ',
+        slug: 'card-iq',
         android: {
         ...config.android,
-        icon: isPreview ? './assets/cardiq-icon.png' : config.android?.icon,
+        icon: iconExists ? './assets/app-icon.png' : config.android?.icon,
         },
         extra: {
         API_KEY: process.env.API_KEY,
